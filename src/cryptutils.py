@@ -62,6 +62,8 @@ def get_configuration(config_file = CONFIG_FILE):
     config_file    a path to the configuration file
     output:
     A data dictionary containing the configuration"""
+    if not os.path.exists(config_file):
+        raise FileNotFoundError("Missing configuration file: run the init command")
     with open(config_file, 'r') as cfile:
         return json.load(cfile)
     

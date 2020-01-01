@@ -5,6 +5,7 @@ Created on 24 Dec 2019
 '''
 
 import boto3
+from boto3.dynamodb.conditions import Key
 from constants import SECRET_ACCESS_TABLE, CONFIG_FILE
 from datetime import datetime
 import cryptutils as cu
@@ -115,7 +116,23 @@ def get_secret_info(domain, access, mem_pwd, conf_file = CONFIG_FILE, salt = Non
         return resp['Item']
     else:
         return None
-
+    
+def list_secrets(domain):
+    """List all secrets by domain
+    input:
+    domain    the domain of the secrets. If null all records are returned
+    output:
+    a list of (domain, access) tuples
+    """
+    secrets = []
+    if domain is not None:
+        resp = _get_table().query(KeyConditionExpression=Key('domain').eq(domain))
+    else:
+        resp = _get_table().scan()
+    for i in resp['Items']:
+        secrets.append((i['domain'],i['access']))
+    return secrets
+    
 def count_secrets():
     """Returns the total number of secrets"""
     return _get_table().scan(Select='COUNT')['Count']

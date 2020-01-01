@@ -20,6 +20,7 @@ class Parser(object):
 The list of secrets commands are:
    set             Insert a new secret
    get             Retrieves a secret
+   delete          Remove a secret
    list            list all secrets in a given domain
    query           query secrets based on a condition
    init            create the initial configuration for a client device
@@ -121,6 +122,26 @@ secrets <command> -h
             print(du.get_secret(args.domain, args.access, args.memorable))
         except Exception as e:
             print(repr(e))
+            
+    def delete(self):
+        parser = argparse.ArgumentParser(
+            description='Removes a secret',
+            prog='secrets delete')
+        #required arguments
+        parser.add_argument('-d',
+                            dest='domain',
+                            required=True,
+                            help='The domain (category) of the secret')
+        parser.add_argument('-a',
+                        dest='access',
+                        required=True,
+                        help='The sub=domain (sub-category or access) of the secret')
+        args = parser.parse_args(sys.argv[2:])
+        print('Running delete with arguments %s' % args)
+        try:
+            du.delete_secret(args.domain, args.access)
+        except Exception as e:
+            print(repr(e))            
 
     def list(self):
         parser = argparse.ArgumentParser(
@@ -132,6 +153,13 @@ secrets <command> -h
                             help='The domain (category) of the secrets. If not given all secrets are returned')
         args = parser.parse_args(sys.argv[2:])
         print('Running list with arguments %s' % args)
+        try:
+            secrets = du.list_secrets(args.domain)
+            print("<%-19s:<access>"%'domain>')
+            for s in secrets:
+                print("%-20s:%s"%s)
+        except Exception as e:
+            print(repr(e))                    
         
     def help(self):
         self._parser.print_help()        
