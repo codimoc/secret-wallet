@@ -23,7 +23,7 @@ def insert_secret_login(domain, access, uid, pwd, mem_pwd, conf_file = CONFIG_FI
     mem_pwd    memorable password to encrypt the secret
     conf_file  file containing the encrypted key
     """
-    timestamp = datetime.now().ctime()
+    timestamp = datetime.now().isoformat()
     _get_table().put_item(Item={'domain'    : domain,
                                 'access'    : access,
                                 'uid'       : cu.encrypt(uid, mem_pwd, conf_file),
@@ -39,7 +39,7 @@ def insert_secret_info(domain, access, info, mem_pwd, conf_file = CONFIG_FILE):
     mem_pwd    memorable password to encrypt the secret
     conf_file  file containing the encrypted key
     """
-    timestamp = datetime.now().ctime()
+    timestamp = datetime.now().isoformat()
     _get_table().put_item(Item={'domain'    : domain,
                                 'access'    : access,
                                 'info'      : cu.encrypt(info, mem_pwd, conf_file),
