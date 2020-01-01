@@ -66,4 +66,19 @@ def test_insert_select_compare_info(set_up):
         assert secret_info == res['info']
     finally:
         du.delete_secret(domain, access)        
-        
+
+def test_insert_select_compare_login_no_conf():
+    c_pwd = u"passwd"
+    m_pwd = u"memorabile"
+    secret_uid = u"me@home"
+    secret_pwd = u"ciao mamma"
+    domain = u"my_domain" 
+    access = u"my_access"
+    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    try:        
+        du.insert_secret_login(domain, access, secret_uid, secret_pwd, m_pwd, salt=key)
+        res = du.get_secret_login(domain, access, m_pwd, salt=key)
+        assert secret_uid == res['uid']
+        assert secret_pwd == res['pwd']
+    finally:
+        du.delete_secret(domain, access)        

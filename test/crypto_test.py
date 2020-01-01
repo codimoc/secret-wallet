@@ -64,4 +64,14 @@ def test_encrypt_decrypt_secret(set_up):
     assert v1 == v2
     assert v1 == secret
     
-        
+def test_encrypt_decrypt_no_config():
+    c_pwd = u"passwd"
+    m_pwd = u"memorabile"
+    secret = u"mamma"
+    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")    
+    esecret = cu.encrypt(secret, m_pwd, salt=key)
+    v1 = cu.decrypt(esecret, m_pwd, salt=key)
+    esecret2 = cu.encrypt(secret, m_pwd, salt=key)
+    v2 = cu.decrypt(esecret2, m_pwd, salt=key)
+    assert v1 == v2
+    assert v1 == secret        

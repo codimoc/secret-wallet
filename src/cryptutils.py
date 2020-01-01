@@ -65,44 +65,52 @@ def get_configuration(config_file = CONFIG_FILE):
     with open(config_file, 'r') as cfile:
         return json.load(cfile)
     
-def encrypt(secret, mem_pswd,config_file = CONFIG_FILE):
-    """Encrypts a secrets using a fixed key and a memorable password
-    input:
-    secret       text to encrypt (unicode)
-    mem_pswd     memorable password (unicode)
-    config_file  a path to the configuration file containing the encrypted key
-    output:
-    The encrypted (byte string) value 
-    """
-    data = get_configuration(config_file)
-    salt = data['key'].encode('latin1')
+def _encrypt(secret, mem_pswd, salt):
     kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
                      length=32,
-                     salt=salt,
+                     salt=salt.encode('latin1'),
                      iterations=100000,
                      backend=default_backend()
                      )
     key = base64.urlsafe_b64encode(kdf.derive(mem_pswd.encode("latin1")))   
     f = Fernet(key)
-    return f.encrypt(secret.encode("latin1"))      
- 
-def decrypt(secret, mem_pswd,config_file = CONFIG_FILE):
-    """Decrypts a secrets using a fixed key and a memorable password
+    return f.encrypt(secret.encode("latin1"))
+    
+def encrypt(secret, mem_pswd, config_file = CONFIG_FILE, salt = None):
+    """Encrypts a secrets using a fixed key and a memorable password
     input:
-    secret       encrypted secret
+    secret       text to encrypt (unicode)
     mem_pswd     memorable password (unicode)
     config_file  a path to the configuration file containing the encrypted key
+    salt         a string representation of the salt (optional)    
     output:
-    The decrypted secret 
+    The encrypted (byte string) value 
     """
-    data = get_configuration(config_file)
-    salt = data['key'].encode('latin1')
+    if salt is None:
+        salt = get_configuration(config_file)['key']
+    return _encrypt(secret, mem_pswd, salt)
+
+def _decrypt(secret, mem_pswd, salt):
     kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
                      length=32,
-                     salt=salt,
+                     salt=salt.encode('latin1'),
                      iterations=100000,
                      backend=default_backend()
                      )
     key = base64.urlsafe_b64encode(kdf.derive(mem_pswd.encode("latin1")))   
     f = Fernet(key)
     return f.decrypt(secret).decode("latin1")    
+ 
+def decrypt(secret, mem_pswd,config_file = CONFIG_FILE, salt = None):
+    """Decrypts a secrets using a fixed key and a memorable password
+    input:
+    secret       encrypted secret
+    mem_pswd     memorable password (unicode)
+    config_file  a path to the configuration file containing the encrypted key
+    salt         a string representation of the salt (optional)    
+    output:
+    The decrypted secret 
+    """
+    if salt is None:
+        salt = get_configuration(config_file)['key']
+    return _decrypt(secret, mem_pswd, salt)    
