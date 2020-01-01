@@ -6,6 +6,8 @@ Created on 1 Jan 2020
 
 import argparse
 import sys
+import cryptutils as cu
+import dbutils as du
 
 
 class Parser(object):
@@ -49,6 +51,11 @@ secrets <command> -h
                             help='The configuration password to encrypt the secret key')
         args = parser.parse_args(sys.argv[2:])
         print('Running init with arguments %s' % args)
+        try:
+            cu.configure(args.cfg_pwd)
+        except RuntimeError as e:
+            print(e)
+        
         
     def set(self):
         parser = argparse.ArgumentParser(
@@ -79,6 +86,17 @@ secrets <command> -h
                             help='An information field for a given access')               
         args = parser.parse_args(sys.argv[2:])
         print('Running set with arguments %s' % args)
+        try:
+            if args.uid is not None and args.pwd is not None:
+                print("Inserting a login secret")
+                du.insert_secret_login(args.domain, args.access, args.uid, args.pwd, args.memorable)
+            elif args.info is not None:
+                print("Inserting an info secret")
+                du.insert_secret_info(args.domain, args.access, args.info, args.memorable)
+            else:
+                print("No secret to insert")
+        except Exception as e:
+            print(repr(e))
         
     def get(self):
         parser = argparse.ArgumentParser(
@@ -98,7 +116,11 @@ secrets <command> -h
                         required=True,
                         help='The memorable password to be used for encryption/decryption')    
         args = parser.parse_args(sys.argv[2:])
-        print('Running get with arguments %s' % args)        
+        print('Running get with arguments %s' % args)
+        try:
+            print(du.get_secret(args.domain, args.access, args.memorable))
+        except Exception as e:
+            print(repr(e))
 
     def list(self):
         parser = argparse.ArgumentParser(

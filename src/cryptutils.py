@@ -48,7 +48,7 @@ def configure(config_password,config_file = CONFIG_FILE):
        config_file      the configuration file, defaults to fixed location in CONFIG_FILE
        """
     if _has_configuration(config_file):
-        raise RuntimeError("Found pre-existing configuration in %s. To reconfigure the secretes call reconfigure function",config_file)
+        raise RuntimeError("Found pre-existing configuration in %s. To reconfigure the secretes use the reconf command"%config_file)
     
     ekey=_get_encripted_key(config_password.encode("latin1")).decode("latin1")
     conf = {'key': ekey}
