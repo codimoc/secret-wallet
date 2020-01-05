@@ -82,27 +82,25 @@ secrets <command> -h
         #optional arguments
         parser.add_argument('-u',
                             '--uid',
-                            help='The login if for a given access')
+                            help='The login id for a given access')
         parser.add_argument('-p',
                             '--pwd',
                             help='The password for a given access')
-        parser.add_argument('-i',
-                            '--info',
-                            help='An information field for a given access')               
+        parser.add_argument('-ik',
+                            '--info_key',
+                            help='The key in an information map')
+        parser.add_argument('-iv',
+                            '--info_value',
+                            help='The value in an information map')                       
         args = parser.parse_args(sys.argv[2:])
         print('Running set with arguments %s' % args)
-#         try:
-#             du.insert_secret(args.domain, args.access, args.uid, args.pwd, args.memorable)
-#             if args.uid is not None and args.pwd is not None:
-#                 print("Inserting a login secret")
-#                 du.insert_secret_login(args.domain, args.access, args.uid, args.pwd, args.memorable)
-#             elif args.info is not None:
-#                 print("Inserting an info secret")
-#                 du.insert_secret_info(args.domain, args.access, args.info, args.memorable)
-#             else:
-#                 print("No secret to insert")
-#         except Exception as e:
-#             print(repr(e))
+        try:
+            if not du.has_secret(args.domain, args.access):                
+                du.insert_secret(args.domain, args.access, args.uid, args.pwd, {args.info_key :args.info_value}, args.memorable)
+            else:
+                du.update_secret(args.domain, args.access, args.uid, args.pwd, args.info_key, args.info_value, args.memorable)
+        except Exception as e:
+            print(repr(e))
         
     def get(self):
         parser = argparse.ArgumentParser(
