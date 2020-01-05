@@ -31,7 +31,9 @@ The list of secrets commands are:
 For individual help type:
 secrets <command> -h
 ''')
-        parser.add_argument('command', help='Subcommand to run')
+        parser.add_argument('command',
+                            choices=['set','get','delete','list','query','init','reconf','help'],
+                            help='Subcommand to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.command):
@@ -59,6 +61,8 @@ secrets <command> -h
         
         
     def set(self):
+        #Need to check if it exists already, and it is an update or a create
+
         parser = argparse.ArgumentParser(
             description='Insert a new secret',
             prog='secrets set')
@@ -87,17 +91,18 @@ secrets <command> -h
                             help='An information field for a given access')               
         args = parser.parse_args(sys.argv[2:])
         print('Running set with arguments %s' % args)
-        try:
-            if args.uid is not None and args.pwd is not None:
-                print("Inserting a login secret")
-                du.insert_secret_login(args.domain, args.access, args.uid, args.pwd, args.memorable)
-            elif args.info is not None:
-                print("Inserting an info secret")
-                du.insert_secret_info(args.domain, args.access, args.info, args.memorable)
-            else:
-                print("No secret to insert")
-        except Exception as e:
-            print(repr(e))
+#         try:
+#             du.insert_secret(args.domain, args.access, args.uid, args.pwd, args.memorable)
+#             if args.uid is not None and args.pwd is not None:
+#                 print("Inserting a login secret")
+#                 du.insert_secret_login(args.domain, args.access, args.uid, args.pwd, args.memorable)
+#             elif args.info is not None:
+#                 print("Inserting an info secret")
+#                 du.insert_secret_info(args.domain, args.access, args.info, args.memorable)
+#             else:
+#                 print("No secret to insert")
+#         except Exception as e:
+#             print(repr(e))
         
     def get(self):
         parser = argparse.ArgumentParser(
