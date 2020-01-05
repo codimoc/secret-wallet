@@ -54,9 +54,13 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, conf_
     salt       a string representation of the salt (optional)
     """
     timestamp = datetime.now().isoformat()
-    expression_attributes = {}
-    expression_values = {}
+    expression_attributes = {'#domain':'domain',
+                             '#access':'access'}
+    expression_values = {':domain':domain,
+                         ':access':access}
     update_expression = "SET"
+    condition_expression = "#domain = :domain AND #access = :access"
+    
     if uid is not None:
         expression_attributes.update({'#uid':'uid'})
         expression_values.update({':uid' : cu.encrypt(uid, mem_pwd, conf_file, salt)})
@@ -76,12 +80,16 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, conf_
     expression_attributes.update({'#timestamp':'timestamp'})
     expression_values.update({':ts': timestamp})
     update_expression += ' #timestamp = :ts'
-        
-    _get_table().update_item(Key={"domain": domain, "access": access},
-                             ExpressionAttributeNames  = expression_attributes,
-                             ExpressionAttributeValues = expression_values,
-                             UpdateExpression          = update_expression 
-                             )
+    
+    try:    
+        _get_table().update_item(Key={"domain": domain, "access": access},
+                                 ExpressionAttributeNames  = expression_attributes,
+                                 ExpressionAttributeValues = expression_values,
+                                 UpdateExpression          = update_expression,
+                                 ConditionExpression       = condition_expression 
+                                 )
+    except:
+        pass #the condition failed bu there should be no side effect
     
 def has_secret(domain, access):
     """Checks the existence of a secret

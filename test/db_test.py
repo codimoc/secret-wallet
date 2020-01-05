@@ -212,3 +212,32 @@ def test_update_secret_info_change_password_and_a_value():
         assert old_ts <  res['timestamp']            
     finally:
         du.delete_secret(domain, access)
+        
+def test_update_missing_secret_no_effect():
+    c_pwd = u"passwd"
+    m_pwd = u"memorabile"
+    domain = u"my_domain" 
+    access = u"my_access"
+    access2 = u"my_second access" 
+    secret_uid = u"me@home"
+    secret_pwd = u"ciao mamma"
+    secret_pwd2 = u"my second password"    
+    secret_info = {'message':'secret'}
+    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    try:
+        ns = du.count_secrets()
+        du.insert_secret(domain, access, secret_uid, secret_pwd, secret_info, m_pwd, salt=key)
+        assert ns + 1 == du.count_secrets()
+        res = du.get_secret(domain, access, m_pwd, salt=key)
+        old_ts = res['timestamp']
+        assert 'secret' == res['info']['message']
+        assert secret_pwd == res['pwd']
+        assert secret_uid ==  res['uid']
+        
+        du.update_secret(domain, access2, None, secret_pwd2, None, None, m_pwd, salt=key)
+        
+        assert ns + 1 == du.count_secrets()
+        res = du.get_secret(domain, access, m_pwd, salt=key)
+        assert old_ts ==  res['timestamp']            
+    finally:
+        du.delete_secret(domain, access)        
