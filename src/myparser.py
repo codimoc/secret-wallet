@@ -61,8 +61,6 @@ secrets <command> -h
         
         
     def set(self):
-        #Need to check if it exists already, and it is an update or a create
-
         parser = argparse.ArgumentParser(
             description='Insert a new secret',
             prog='secrets set')
@@ -94,11 +92,15 @@ secrets <command> -h
                             help='The value in an information map')                       
         args = parser.parse_args(sys.argv[2:])
         print('Running set with arguments %s' % args)
+        if args.info_key is None or args.info_value is None:
+            info = None
+        else:
+            info = {args.info_key :args.info_value}                       
         try:
-            if not du.has_secret(args.domain, args.access):                
-                du.insert_secret(args.domain, args.access, args.uid, args.pwd, {args.info_key :args.info_value}, args.memorable)
+            if not du.has_secret(args.domain, args.access): 
+                du.insert_secret(args.domain, args.access, args.uid, args.pwd, info , args.memorable)
             else:
-                du.update_secret(args.domain, args.access, args.uid, args.pwd, args.info_key, args.info_value, args.memorable)
+                du.update_secret(args.domain, args.access, args.uid, args.pwd, info, args.memorable)
         except Exception as e:
             print(repr(e))
         
