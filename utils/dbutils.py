@@ -6,9 +6,9 @@ Created on 24 Dec 2019
 
 import boto3
 from boto3.dynamodb.conditions import Key
-from constants import SECRET_ACCESS_TABLE, CONFIG_FILE
 from datetime import datetime
-import cryptutils as cu
+from .constants import SECRET_ACCESS_TABLE, CONFIG_FILE
+from .cryptutils import encrypt, decrypt
 
 def _get_table():
     dynamodb = boto3.resource('dynamodb')
@@ -35,8 +35,8 @@ def insert_secret(domain, access, uid, pwd, info, mem_pwd, conf_file = CONFIG_FI
         info = {}
     _get_table().put_item(Item={'domain'    : domain,
                                 'access'    : access,
-                                'uid'       : cu.encrypt(uid, mem_pwd, conf_file, salt),
-                                'pwd'       : cu.encrypt(pwd, mem_pwd, conf_file, salt),
+                                'uid'       : encrypt(uid, mem_pwd, conf_file, salt),
+                                'pwd'       : encrypt(pwd, mem_pwd, conf_file, salt),
                                 'info'      : info,
                                 'timestamp' : timestamp})
     
@@ -63,11 +63,11 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, conf_
     
     if uid is not None:
         expression_attributes.update({'#uid':'uid'})
-        expression_values.update({':uid' : cu.encrypt(uid, mem_pwd, conf_file, salt)})
+        expression_values.update({':uid' : encrypt(uid, mem_pwd, conf_file, salt)})
         update_expression += ' #uid = :uid,'
     if pwd is not None:
         expression_attributes.update({'#pwd':'pwd'})
-        expression_values.update({':pwd' : cu.encrypt(pwd, mem_pwd, conf_file, salt)})
+        expression_values.update({':pwd' : encrypt(pwd, mem_pwd, conf_file, salt)})
         update_expression += ' #pwd = :pwd,'
     if info_key is not None and info_value is not None:
         expression_attributes.update({'#info':'info','#key':info_key})
@@ -127,8 +127,8 @@ def get_secret(domain, access, mem_pwd, conf_file = CONFIG_FILE, salt=None):
     #to convert to bytes, needs the .value attribute
     ret = resp['Item']
     if 'uid' in ret and ret['uid'] is not None and 'pwd' in ret and ret['pwd'] is not None:
-        ret['uid'] = cu.decrypt(ret['uid'].value, mem_pwd, conf_file, salt)
-        ret['pwd'] = cu.decrypt(ret['pwd'].value, mem_pwd, conf_file, salt)
+        ret['uid'] = decrypt(ret['uid'].value, mem_pwd, conf_file, salt)
+        ret['pwd'] = decrypt(ret['pwd'].value, mem_pwd, conf_file, salt)
     return ret
     
 def list_secrets(domain):

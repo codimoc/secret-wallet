@@ -6,7 +6,7 @@ Created on 16 Dec 2019
 
 import pytest
 import os
-import cryptutils as cu 
+import utils.cryptutils as cu 
 
 @pytest.fixture
 def set_up():

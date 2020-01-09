@@ -6,8 +6,8 @@ Created on 1 Jan 2020
 
 import argparse
 import sys
-import cryptutils as cu
-import dbutils as du
+from .cryptutils import configure
+from .dbutils import has_secret,get_secret, insert_secret, list_secrets, update_secret, delete_secret
 
 
 class Parser(object):
@@ -55,7 +55,7 @@ secrets <command> -h
         args = parser.parse_args(sys.argv[2:])
         print('Running init with arguments %s' % args)
         try:
-            cu.configure(args.cfg_pwd)
+            configure(args.cfg_pwd)
         except RuntimeError as e:
             print(e)
         
@@ -97,10 +97,10 @@ secrets <command> -h
         else:
             info = {args.info_key :args.info_value}                       
         try:
-            if not du.has_secret(args.domain, args.access): 
-                du.insert_secret(args.domain, args.access, args.uid, args.pwd, info , args.memorable)
+            if not has_secret(args.domain, args.access): 
+                insert_secret(args.domain, args.access, args.uid, args.pwd, info , args.memorable)
             else:
-                du.update_secret(args.domain, args.access, args.uid, args.pwd, info, args.memorable)
+                update_secret(args.domain, args.access, args.uid, args.pwd, info, args.memorable)
         except Exception as e:
             print(repr(e))
         
@@ -124,7 +124,7 @@ secrets <command> -h
         args = parser.parse_args(sys.argv[2:])
         print('Running get with arguments %s' % args)
         try:
-            print(du.get_secret(args.domain, args.access, args.memorable))
+            print(get_secret(args.domain, args.access, args.memorable))
         except Exception as e:
             print(repr(e))
             
@@ -144,7 +144,7 @@ secrets <command> -h
         args = parser.parse_args(sys.argv[2:])
         print('Running delete with arguments %s' % args)
         try:
-            du.delete_secret(args.domain, args.access)
+            delete_secret(args.domain, args.access)
         except Exception as e:
             print(repr(e))            
 
@@ -159,7 +159,7 @@ secrets <command> -h
         args = parser.parse_args(sys.argv[2:])
         print('Running list with arguments %s' % args)
         try:
-            secrets = du.list_secrets(args.domain)
+            secrets = list_secrets(args.domain)
             print("<%-19s:<access>"%'domain>')
             for s in secrets:
                 print("%-20s:%s"%s)

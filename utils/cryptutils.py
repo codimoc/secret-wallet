@@ -8,7 +8,7 @@ import os
 import base64
 import json
 
-from constants import CONFIG_FILE, PRE_SALT
+from .constants import CONFIG_FILE, PRE_SALT
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes

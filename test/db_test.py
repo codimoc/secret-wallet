@@ -5,8 +5,8 @@ Created on 30 Dec 2019
 '''
 import pytest
 import os
-import cryptutils as cu
-import dbutils as du 
+import utils.cryptutils as cu
+import utils.dbutils as du 
 
 @pytest.fixture
 def set_up():
