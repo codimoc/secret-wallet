@@ -6,8 +6,8 @@ Created on 1 Jan 2020
 
 import argparse
 import sys
-from .cryptutils import configure
-from .dbutils import has_secret,get_secret, insert_secret, list_secrets, update_secret, delete_secret
+from secretwallet.utils.cryptutils import configure
+from secretwallet.utils.dbutils import has_secret,get_secret, insert_secret, list_secrets, update_secret, delete_secret
 
 
 class Parser(object):
@@ -15,21 +15,21 @@ class Parser(object):
     def __init__(self):
         parser = argparse.ArgumentParser(
             description='The Secrets manager',
-            usage='''secrets <command> [<args>]
+            usage='''secretwallet <command> [<args>]
 
-The list of secrets commands are:
+The list of secretwallet commands are:
    set             Insert a new secret
    get             Retrieves a secret
    delete          Remove a secret
-   list            list all secrets in a given domain
-   query           query secrets based on a condition
+   list            list all secretwallet in a given domain
+   query           query secretwallet based on a condition
    init            create the initial configuration for a client device
    reconf          change an existing configuration
    help            print the main help page 
    ....
    
 For individual help type:
-secrets <command> -h
+secretwallet <command> -h
 ''')
         parser.add_argument('command',
                             choices=['set','get','delete','list','query','init','reconf','help'],
@@ -46,7 +46,7 @@ secrets <command> -h
     def init(self):
         parser = argparse.ArgumentParser(
             description='Create the initial configuration on the client device',
-            prog='secrets init')
+            prog='secretwallet init')
         #required arguments
         parser.add_argument('-c',
                             dest='cfg_pwd',
@@ -63,7 +63,7 @@ secrets <command> -h
     def set(self):
         parser = argparse.ArgumentParser(
             description='Insert a new secret',
-            prog='secrets set')
+            prog='secretwallet set')
         #required arguments
         parser.add_argument('-d',
                             dest='domain',
@@ -107,7 +107,7 @@ secrets <command> -h
     def get(self):
         parser = argparse.ArgumentParser(
             description='Retrieves a secret',
-            prog='secrets get')
+            prog='secretwallet get')
         #required arguments
         parser.add_argument('-d',
                             dest='domain',
@@ -131,7 +131,7 @@ secrets <command> -h
     def delete(self):
         parser = argparse.ArgumentParser(
             description='Removes a secret',
-            prog='secrets delete')
+            prog='secretwallet delete')
         #required arguments
         parser.add_argument('-d',
                             dest='domain',
@@ -150,12 +150,12 @@ secrets <command> -h
 
     def list(self):
         parser = argparse.ArgumentParser(
-            description='Lists all secrets in a given domain',
-            prog='secrets list')
+            description='Lists all secretwallet in a given domain',
+            prog='secretwallet list')
         #optional arguments
         parser.add_argument('-d',
                             '--domain',
-                            help='The domain (category) of the secrets. If not given all secrets are returned')
+                            help='The domain (category) of the secretwallet. If not given all secretwallet are returned')
         args = parser.parse_args(sys.argv[2:])
         print('Running list with arguments %s' % args)
         try:

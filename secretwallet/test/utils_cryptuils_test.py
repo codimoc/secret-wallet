@@ -6,12 +6,12 @@ Created on 16 Dec 2019
 
 import pytest
 import os
-import utils.cryptutils as cu 
+import secretwallet.utils.cryptutils as cu 
 
 @pytest.fixture
 def set_up():
     path = os.path.dirname(__file__)
-    conf_file = os.path.join(path,'data','.secrets','test.json')
+    conf_file = os.path.join(path,'data','.secretwallet','test.json')
     yield conf_file
     
     if os.path.exists(conf_file):

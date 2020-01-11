@@ -8,7 +8,7 @@ import os
 import base64
 import json
 
-from .constants import CONFIG_FILE, PRE_SALT
+from secretwallet.utils.constants import CONFIG_FILE, PRE_SALT
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -79,7 +79,7 @@ def _encrypt(secret, mem_pswd, salt):
     return f.encrypt(secret.encode("latin1"))
     
 def encrypt(secret, mem_pswd, config_file = CONFIG_FILE, salt = None):
-    """Encrypts a secrets using a fixed key and a memorable password
+    """Encrypts a secretwallet using a fixed key and a memorable password
     input:
     secret       text to encrypt (unicode)
     mem_pswd     memorable password (unicode)
@@ -104,7 +104,7 @@ def _decrypt(secret, mem_pswd, salt):
     return f.decrypt(secret).decode("latin1")    
  
 def decrypt(secret, mem_pswd,config_file = CONFIG_FILE, salt = None):
-    """Decrypts a secrets using a fixed key and a memorable password
+    """Decrypts a secretwallet using a fixed key and a memorable password
     input:
     secret       encrypted secret
     mem_pswd     memorable password (unicode)

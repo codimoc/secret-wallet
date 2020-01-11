@@ -7,8 +7,8 @@ from os.path import expanduser
 HOME_FOLDER = expanduser("~")
 
 
-CONFIG_FOLDER = f"{HOME_FOLDER}/.secrets"
-CONFIG_FILE = f"{CONFIG_FOLDER}/secrets.json"
+CONFIG_FOLDER = f"{HOME_FOLDER}/.secretwallet"
+CONFIG_FILE = f"{CONFIG_FOLDER}/secretwallet.json"
 
 PRE_SALT = b"Nel mezzo del cammin di nostra vita"
 

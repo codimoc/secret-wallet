@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.1",
     author="codimoc",
     author_email="codimoc@prismoid.uk",
-    description="A cloud-based wallet for personal secrets",
+    description="A cloud-based wallet for personal secretwallet",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/codimoc/secret-wallet",
@@ -19,4 +19,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    install_requires = ['boto3','cryptography'],
 )

@@ -7,8 +7,8 @@ Created on 24 Dec 2019
 import boto3
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
-from .constants import SECRET_ACCESS_TABLE, CONFIG_FILE
-from .cryptutils import encrypt, decrypt
+from secretwallet.utils.constants import SECRET_ACCESS_TABLE, CONFIG_FILE
+from secretwallet.utils.cryptutils import encrypt, decrypt
 
 def _get_table():
     dynamodb = boto3.resource('dynamodb')
@@ -132,9 +132,9 @@ def get_secret(domain, access, mem_pwd, conf_file = CONFIG_FILE, salt=None):
     return ret
     
 def list_secrets(domain):
-    """List all secrets by domain
+    """List all secretwallet by domain
     input:
-    domain    the domain of the secrets. If null all records are returned
+    domain    the domain of the secretwallet. If null all records are returned
     output:
     a list of (domain, access) tuples
     """
@@ -148,5 +148,5 @@ def list_secrets(domain):
     return secrets
     
 def count_secrets():
-    """Returns the total number of secrets"""
+    """Returns the total number of secretwallet"""
     return _get_table().scan(Select='COUNT')['Count']

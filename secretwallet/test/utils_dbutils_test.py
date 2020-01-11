@@ -5,13 +5,13 @@ Created on 30 Dec 2019
 '''
 import pytest
 import os
-import utils.cryptutils as cu
-import utils.dbutils as du 
+import secretwallet.utils.cryptutils as cu
+import secretwallet.utils.dbutils as du 
 
 @pytest.fixture
 def set_up():
     path = os.path.dirname(__file__)
-    conf_file = os.path.join(path,'data','.secrets','test.json')
+    conf_file = os.path.join(path,'data','.secretwallet','test.json')
     yield conf_file
     
     if os.path.exists(conf_file):
@@ -129,7 +129,7 @@ def test_update_secret_login():
         
         du.update_secret(domain, access, secret_uid2, None, None, None, m_pwd, salt=key)
         
-        assert ns+1 == du.count_secrets() #no change to the number of secrets
+        assert ns+1 == du.count_secrets() #no change to the number of secretwallet
         res = du.get_secret(domain, access, m_pwd, salt=key)
         assert secret_uid2 == res['uid']
         assert secret_pwd == res['pwd'] 
