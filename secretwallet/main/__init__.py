@@ -1,3 +1,4 @@
 from secretwallet.utils import myparser
 
-myparser.Parser()
+def main():
+    myparser.Parser()
