@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="secret-wallet-codimoc",
-    version="0.0.1",
+    version="0.0.2",
     author="codimoc",
     author_email="codimoc@prismoid.uk",
     description="A cloud-based wallet for personal secretwallet",
