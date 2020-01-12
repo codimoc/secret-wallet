@@ -1,5 +1,3 @@
-#The secret wallet, by codimoc
-
 Like many wallet applications, this Python-based utility addresses the requirement of having a single point of access for the large amount
 of sensitive information that our social-media presence produces.
 
@@ -12,7 +10,8 @@ but this is not very helpful when trying to remember the login credentials of a 
 
 And if the secret wallet travels with us, it is constantly at risk of being compromised or lost. And with it, all the secrets it contains.
 
-Keeping these secrets on an electronic wallet instead, on a PC, a tablet or a phone, it is as safe as the device these secrets are on. They can be encrypted on a hard drive, but the disk can fail, the phone can be stolen, the tablet forgotten on a plane... And so on.
+Keeping these secrets on an electronic wallet instead, on a PC, a tablet or a phone, is as safe as the device these secrets are stored on.
+Data can be encrypted on a hard drive, but the disk can fail, the phone can be stolen, the tablet forgotten on a plane... And so on.
 
 ## Motivations
 
@@ -36,21 +35,30 @@ Let's consider these in detail:
     * There should be a third layer of protection on the remote store. 
 
 
+## The secret wallet, by codimoc, and security considerations
 
+This Python application strives to fulfil the requirements and motivations by:
+* Using AWS DynamoDB as the remote store, and relying on the security layer of the Amazon cloud as the third layer of protection, 
+* using the Python **cryptography** package for local (on device) encryption,
+* using the AWS **boto3** package to interact with the remote store
+* securing both devices and secrets with independent passwords (the first two layers of protection)
+* providing console-based interaction with the secret wallet (for the time being)
 
+Having secured the allowed devices with a configuration password provides safety against misuses of the store once the memorable password is
+compromised by accident. If for example this memorable password is confided to others or guessed, only pre-configured devices can access 
+the secrets.
 
-
-## Security considerations
+On the other hand, if a device is lost or stolen, the memorable password is still required to access the secrets. The AWS security layer does not help in this case, 
+with the AWS secure credentials helpfully located on the compromised device's file system.
 
 ## Concepts
 
 ## Syntax
 
-## First time configuration
-
 ## Usage
 
+## First time configuration
 
- 
-Fill this document with a full description usin markup format as described in
-https://guides.github.com/features/mastering-markdown/
+## Reconfiguration
+
+## Help needed
