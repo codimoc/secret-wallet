@@ -69,7 +69,8 @@ This data is also stored as an encrypted value,
  ```
  This data is currently stored without the first two layers of encryption and relies only on the AWS security layer. It might be encrypted in
  future releases.
- 
+
+## Dependencies and requirements 
   
 ## Syntax
 
