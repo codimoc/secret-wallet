@@ -1,7 +1,7 @@
 '''
 Created on 15 Dec 2019
 
-@author: gualtiero
+@author: codimoc
 '''
 from os.path import expanduser
 HOME_FOLDER = expanduser("~")

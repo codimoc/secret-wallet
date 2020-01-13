@@ -1,7 +1,7 @@
 '''
 Created on 24 Dec 2019
 
-@author: gualtiero
+@author: codimoc
 '''
 
 import boto3

@@ -1,7 +1,7 @@
 '''
 Created on 1 Jan 2020
 
-@author: gualtiero
+@author: codimoc
 '''
 
 import argparse

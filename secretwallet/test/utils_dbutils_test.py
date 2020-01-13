@@ -1,7 +1,7 @@
 '''
 Created on 30 Dec 2019
 
-@author: gualtiero
+@author: codimoc
 '''
 import pytest
 import os
