@@ -6,7 +6,8 @@ Created on 16 Dec 2019
 
 import pytest
 import os
-import secretwallet.utils.cryptutils as cu 
+import secretwallet.utils.cryptutils as cu
+from secretwallet.utils.fileutils import touch 
 
 @pytest.fixture
 def set_up():
@@ -18,11 +19,6 @@ def set_up():
         os.remove(conf_file)
         os.rmdir(os.path.dirname(conf_file))
     
-def touch(path):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'a'):
-        os.utime(path, None)
-        
 
 def test_configure_config_already_there(set_up):
     conf_file = set_up

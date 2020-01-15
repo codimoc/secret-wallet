@@ -7,11 +7,12 @@ Created on 24 Dec 2019
 import boto3
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
-from secretwallet.utils.constants import SECRET_ACCESS_TABLE, CONFIG_FILE
+from secretwallet.utils.constants import SECRET_ACCESS_TABLE, CONFIG_FILE, AWS_PROFILE
 from secretwallet.utils.cryptutils import encrypt, decrypt
 
 def _get_table():
-    dynamodb = boto3.resource('dynamodb')
+    session = boto3.session.Session(profile_name=AWS_PROFILE)
+    dynamodb = session.resource('dynamodb')
     return dynamodb.Table(SECRET_ACCESS_TABLE)
 
 def insert_secret(domain, access, uid, pwd, info, mem_pwd, conf_file = CONFIG_FILE, salt = None):
