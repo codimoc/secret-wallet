@@ -1,4 +1,4 @@
-from secretwallet.utils import myparser
+from secretwallet.main import myparser
 
 def main():
     myparser.Parser()

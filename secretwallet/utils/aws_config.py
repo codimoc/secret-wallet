@@ -6,7 +6,7 @@ Created on 13 Jan 2020
 
 import configparser
 import os
-from secretwallet.utils.constants import AWS_PROFILE
+from secretwallet.constants import parameters
 from secretwallet.utils.fileutils import touch
 
 def has_credentials(config_file):
@@ -31,9 +31,9 @@ def set_credentials(config_file, access_key, secret_access_key,region):
         parser.read(config_file)
     else:
         touch(config_file)        
-    parser[AWS_PROFILE] = {'aws_access_key_id'    :  access_key,
-                           'aws_secret_access_key':  secret_access_key,
-                           'region'               :  region}
+    parser[parameters.get_profile_name()] = {'aws_access_key_id'    :  access_key,
+                                             'aws_secret_access_key':  secret_access_key,
+                                             'region'               :  region}
 
     with open(config_file, 'w') as f:
         parser.write(f)
@@ -50,5 +50,5 @@ def get_credentials(config_file):
     ret = {}
     if has_credentials(config_file):
         parser.read(config_file)
-        ret = parser[AWS_PROFILE]
+        ret = parser[parameters.get_profile_name()]
     return ret

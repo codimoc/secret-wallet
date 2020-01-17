@@ -8,7 +8,7 @@ import os
 import base64
 import json
 
-from secretwallet.utils.constants import CONFIG_FILE, PRE_SALT
+from secretwallet.constants import parameters
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -32,14 +32,14 @@ def _get_encripted_key(config_password):
        the encrypted key used for encrypting data"""
     kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
                      length=32,
-                     salt=PRE_SALT,
+                     salt=parameters.get_pre_salt(),
                      iterations=100000,
                      backend=default_backend()
                      )
     key = base64.urlsafe_b64encode(kdf.derive(config_password))
     return key
 
-def configure(config_password,config_file = CONFIG_FILE):
+def configure(config_password,config_file = parameters.get_config_file()):
     """This produce a static salt for cryptography. This salt is stored in the configuration file  on the client machine.
        If the configuration file exists, this function returns an error message, since reconfiguing the salt
        requires changes to all the encripted information in the remote DB
@@ -56,7 +56,7 @@ def configure(config_password,config_file = CONFIG_FILE):
     with open(config_file, 'w') as cfile:
         json.dump(conf, cfile)
         
-def get_configuration(config_file = CONFIG_FILE):
+def get_configuration(config_file = parameters.get_config_file()):
     """Read the configuration file and returns it as a dictionary
     input:
     config_file    a path to the configuration file
@@ -78,7 +78,7 @@ def _encrypt(secret, mem_pswd, salt):
     f = Fernet(key)
     return f.encrypt(secret.encode("latin1"))
     
-def encrypt(secret, mem_pswd, config_file = CONFIG_FILE, salt = None):
+def encrypt(secret, mem_pswd, config_file = parameters.get_config_file(), salt = None):
     """Encrypts a secretwallet using a fixed key and a memorable password
     input:
     secret       text to encrypt (unicode)
@@ -103,7 +103,7 @@ def _decrypt(secret, mem_pswd, salt):
     f = Fernet(key)
     return f.decrypt(secret).decode("latin1")    
  
-def decrypt(secret, mem_pswd,config_file = CONFIG_FILE, salt = None):
+def decrypt(secret, mem_pswd,config_file = parameters.get_config_file(), salt = None):
     """Decrypts a secretwallet using a fixed key and a memorable password
     input:
     secret       encrypted secret
