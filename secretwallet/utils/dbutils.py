@@ -7,7 +7,7 @@ Created on 24 Dec 2019
 import boto3
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
-from secretwallet.constants import parameters
+from secretwallet.constants import parameters, CONFIG_FILE
 from secretwallet.utils.cryptutils import encrypt, decrypt
 
 def _get_table():
@@ -15,7 +15,7 @@ def _get_table():
     dynamodb = session.resource('dynamodb')
     return dynamodb.Table(parameters.get_table_name())
 
-def insert_secret(domain, access, uid, pwd, info, mem_pwd, conf_file = parameters.get_config_file(), salt = None):
+def insert_secret(domain, access, uid, pwd, info, mem_pwd, conf_file = CONFIG_FILE, salt = None):
     """Insert a secret access record in the cloud DB
     input:
     domain     the domain, i.e. logical context, of the secret
@@ -41,7 +41,7 @@ def insert_secret(domain, access, uid, pwd, info, mem_pwd, conf_file = parameter
                                 'info'      : info,
                                 'timestamp' : timestamp})
     
-def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, conf_file = parameters.get_config_file(), salt = None):
+def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, conf_file = CONFIG_FILE, salt = None):
     """Update a secret access record in the cloud DB
     input:
     domain     the domain, i.e. logical context, of the secret
@@ -111,7 +111,7 @@ def delete_secret(domain, access):
     _get_table().delete_item(Key={'domain'  : domain,
                                   'access'  : access})
     
-def get_secret(domain, access, mem_pwd, conf_file = parameters.get_config_file(), salt=None):
+def get_secret(domain, access, mem_pwd, conf_file = CONFIG_FILE, salt=None):
     """Retrieves a secret by primary key
     input:
     domain     the domain, i.e. logical context, of the secret

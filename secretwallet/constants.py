@@ -50,30 +50,6 @@ class Parameters(object):
         else:
             return AWS_PROFILE
         
-    def get_config_folder(self):
-        if 'config_folder' in self.__data:
-            return self.__data['config_folder']
-        else:
-            return CONFIG_FOLDER
-        
-    def get_config_file(self):
-        if 'config_file' in self.__data:
-            return self.__data['config_file']
-        else:
-            return CONFIG_FILE
-        
-    def get_credentials_folder(self):
-        if 'credentials_folder' in self.__data:
-            return self.__data['credentials_folder']
-        else:
-            return CREDENTIALS_FOLDER
-        
-    def get_credentials_file(self):
-        if 'credentials_file' in self.__data:
-            return self.__data['credentials_file']
-        else:
-            return CREDENTIALS_FILE                        
-
     def get_pre_salt(self):
         if 'pre_salt' in self.__data:
             return self.__data['pre_salt']

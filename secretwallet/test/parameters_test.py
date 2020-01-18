@@ -1,7 +1,7 @@
 import json
 import os
 import pytest
-from secretwallet.constants import parameters, Parameters, AWS_PROFILE, CONFIG_FILE, CREDENTIALS_FILE, SECRET_ACCESS_TABLE
+from secretwallet.constants import parameters, Parameters, AWS_PROFILE, SECRET_ACCESS_TABLE
 
 @pytest.fixture
 def set_up():
@@ -9,10 +9,6 @@ def set_up():
     conf_file = os.path.join(path,'data','.secretwallet','test.json')
     #overrides
     data_overrides = {'profile'            : 'my profile',
-                      'config_folder'      : 'my config folder',
-                      'config_file'        : 'my config file',
-                      'credentials_folder' : 'my credentials folder',
-                      'credentials_file'   : 'my credentials file',                      
                       'pre_salt'           : 'my salt',
                       'table_name'         : 'my table'}
     
@@ -32,8 +28,6 @@ def set_up():
 def test_parameters_singleton():
     assert parameters is not None
     assert AWS_PROFILE == parameters.get_profile_name()
-    assert CONFIG_FILE == parameters.get_config_file()
-    assert CREDENTIALS_FILE == parameters.get_credentials_file()
     assert SECRET_ACCESS_TABLE == parameters.get_table_name()
     assert parameters is Parameters() #singleton test
     
@@ -50,9 +44,5 @@ def test_parameters_configure(set_up):
     conf_file = set_up
     parameters.configure(conf_file)
     assert 'my profile'             == parameters.get_profile_name()
-    assert 'my config folder'       == parameters.get_config_folder()
-    assert 'my config file'         == parameters.get_config_file()
-    assert 'my credentials folder'  == parameters.get_credentials_folder()
-    assert 'my credentials file'    == parameters.get_credentials_file()    
     assert 'my salt'                == parameters.get_pre_salt()
     assert 'my table'               == parameters.get_table_name()    

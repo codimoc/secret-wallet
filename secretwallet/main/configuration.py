@@ -1,22 +1,23 @@
-'''
-Created on 13 Jan 2020
-
-@author: codimoc
-'''
-
-import configparser
 import os
-from secretwallet.constants import parameters
+import configparser
+from secretwallet.constants import parameters, CONFIG_FILE, CREDENTIALS_FILE
 from secretwallet.utils.fileutils import touch
 
-def has_credentials(config_file):
-    """Checks if the aws configurations exists
+def has_configuration(config_file=CONFIG_FILE):
+    """Checks if the configurations file CONFIG_FILE exists
     input:
-    config_file    a path to the aws configuration file
+    config_file    a path to the configuration file
     output:
     Boolean indicating if the configuration file exists"""
     return os.path.exists(config_file)
 
+def has_credentials(credentials_file=CREDENTIALS_FILE):
+    """Checks if the aws-credentials file CREDENIALS_FILE exists
+    input:
+    credentials_file   a path to the credentials file
+    output:
+    Boolean indicating if the configturation file exists"""
+    return os.path.exists(credentials_file) 
 
 def set_credentials(config_file, access_key, secret_access_key,region):
     """make or update credentials
