@@ -7,6 +7,8 @@ import pytest
 import os
 import secretwallet.utils.cryptutils as cu
 import secretwallet.utils.dbutils as du 
+from secretwallet.main.configuration import set_configuration, get_configuration
+from secretwallet.constants import parameters
 
 @pytest.fixture
 def set_up():
@@ -17,6 +19,7 @@ def set_up():
     if os.path.exists(conf_file):
         os.remove(conf_file)
         os.rmdir(os.path.dirname(conf_file))
+    parameters.clear()
 
 def test_insert_delete_login(set_up):
     conf_file = set_up
@@ -27,7 +30,8 @@ def test_insert_delete_login(set_up):
     domain = u"my_domain" 
     access = u"my_access"
     ns = du.count_secrets()
-    cu.configure(c_pwd, conf_file)
+    set_configuration(cu.encrypt_key(c_pwd), None, None, None, conf_file)
+    parameters.set_data(get_configuration(conf_file))
     try:        
         du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd, conf_file)
         assert ns+1 == du.count_secrets()
@@ -43,7 +47,8 @@ def test_insert_select_compare_login(set_up):
     secret_pwd = u"ciao mamma"
     domain = u"my_domain" 
     access = u"my_access"
-    cu.configure(c_pwd, conf_file)
+    set_configuration(cu.encrypt_key(c_pwd), None, None, None, conf_file)
+    parameters.set_data(get_configuration(conf_file))
     try:        
         du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd, conf_file)
         res = du.get_secret(domain, access, m_pwd, conf_file)
@@ -59,7 +64,8 @@ def test_insert_select_compare_info(set_up):
     secret_info = {'message':'secret'}
     domain = u"my_domain" 
     access = u"my_access"
-    cu.configure(c_pwd, conf_file)
+    set_configuration(cu.encrypt_key(c_pwd), None, None, None, conf_file)
+    parameters.set_data(get_configuration(conf_file))
     try:        
         du.insert_secret(domain, access, None, None, secret_info, m_pwd, conf_file)
         res = du.get_secret(domain, access, m_pwd, conf_file)
@@ -74,7 +80,7 @@ def test_insert_select_compare_login_no_conf():
     secret_pwd = u"ciao mamma"
     domain = u"my_domain" 
     access = u"my_access"
-    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    key = cu.encrypt_key(c_pwd)
     try:        
         du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd, salt=key)
         res = du.get_secret(domain, access, m_pwd, salt=key)
@@ -90,7 +96,7 @@ def test_has_secret():
     secret_pwd = u"ciao mamma"
     domain = u"my_domain" 
     access = u"my_access"    
-    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    key = cu.encrypt_key(c_pwd)
     try:        
         du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd, salt=key)
         assert du.has_secret(domain, access)
@@ -104,7 +110,7 @@ def test_has_not_secret():
     secret_pwd = u"ciao mamma"
     domain = u"my_domain" 
     access = u"my_access"    
-    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    key = cu.encrypt_key(c_pwd)
     try:        
         du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd, salt=key)
         assert not du.has_secret('new_domain', access)
@@ -119,7 +125,7 @@ def test_update_secret_login():
     secret_pwd = u"ciao mamma"
     domain = u"my_domain" 
     access = u"my_access"    
-    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    key = cu.encrypt_key(c_pwd)
     try:        
         ns = du.count_secrets()
         du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd, salt=key)
@@ -145,7 +151,7 @@ def test_update_secret_info_change_value():
     secret_info = {'message':'secret'}
     info_key = 'message'
     info_val = 'a new secret'   
-    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    key = cu.encrypt_key(c_pwd)
     try:        
         du.insert_secret(domain, access, None, None, secret_info, m_pwd, salt=key)
         res = du.get_secret(domain, access, m_pwd, salt=key)
@@ -168,7 +174,7 @@ def test_update_secret_info_insert_value():
     secret_info = {'message':'secret'}
     info_key = 'a new message'
     info_val = 'a new secret'   
-    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    key = cu.encrypt_key(c_pwd)
     try:        
         du.insert_secret(domain, access, None, None, secret_info, m_pwd, salt=key)
         res = du.get_secret(domain, access, m_pwd, salt=key)
@@ -196,7 +202,7 @@ def test_update_secret_info_change_password_and_a_value():
     secret_info = {'message':'secret'}
     info_key = 'message'
     info_val = 'a new secret'   
-    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    key = cu.encrypt_key(c_pwd)
     try:        
         du.insert_secret(domain, access, secret_uid, secret_pwd, secret_info, m_pwd, salt=key)
         res = du.get_secret(domain, access, m_pwd, salt=key)
@@ -223,7 +229,7 @@ def test_update_missing_secret_no_effect():
     secret_pwd = u"ciao mamma"
     secret_pwd2 = u"my second password"    
     secret_info = {'message':'secret'}
-    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")
+    key = cu.encrypt_key(c_pwd)
     try:
         ns = du.count_secrets()
         du.insert_secret(domain, access, secret_uid, secret_pwd, secret_info, m_pwd, salt=key)

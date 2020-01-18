@@ -8,6 +8,9 @@ import pytest
 import os
 import secretwallet.utils.cryptutils as cu
 from secretwallet.utils.fileutils import touch 
+from secretwallet.main.configuration import set_configuration, get_configuration
+from secretwallet.utils.cryptutils import encrypt_key
+from secretwallet.constants import parameters
 
 @pytest.fixture
 def set_up():
@@ -18,6 +21,7 @@ def set_up():
     if os.path.exists(conf_file):
         os.remove(conf_file)
         os.rmdir(os.path.dirname(conf_file))
+    parameters.clear()
     
 
 def test_configure_config_already_there(set_up):
@@ -25,33 +29,50 @@ def test_configure_config_already_there(set_up):
     #create the file
     touch(conf_file)
     with pytest.raises(RuntimeError, match="Found pre-existing"):
-        cu.configure('passwd', conf_file)
+        set_configuration(encrypt_key('passwd'), None, None, None, conf_file)
         
 def test_get_encrypted_key():
-    passwd = b"passwd"
-    ekey = cu._get_encripted_key(passwd)
+    passwd = u"passwd"
+    ekey = cu.encrypt_key(passwd)
     assert ekey is not None 
-    assert isinstance(ekey, bytes) 
+    assert isinstance(ekey, str) 
     
-    ekey2 = cu._get_encripted_key(passwd)
+    ekey2 = cu.encrypt_key(passwd)
     assert ekey2 == ekey    
             
 def test_configure_save_key(set_up):
     conf_file = set_up
     passwd = u"passwd"
-    cu.configure(passwd, conf_file)
+    set_configuration(encrypt_key(passwd), None, None, None, conf_file)
     
-    data = cu.get_configuration(conf_file)
+    data = get_configuration(conf_file)
     key = data['key'].encode('latin1')
     assert key is not None 
     assert isinstance(key, bytes)
+    
+def test_configure_save_many(set_up):
+    conf_file = set_up
+    passwd = u"passwd"
+    profile = 'my profile'
+    salt = 'my salt'
+    table = 'my table'
+    set_configuration(encrypt_key(passwd), profile, table, salt, conf_file)
+    
+    data = get_configuration(conf_file)
+    key = data['key'].encode('latin1')
+    assert key is not None 
+    assert isinstance(key, bytes)
+    assert profile == data['profile']
+    assert salt == data['salt']
+    assert table == data['table_name']    
     
 def test_encrypt_decrypt_secret(set_up):
     conf_file = set_up
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
     secret = u"mamma"
-    cu.configure(c_pwd, conf_file)
+    set_configuration(encrypt_key(c_pwd), None, None, None, conf_file)
+    parameters.set_data(get_configuration(conf_file))
     
     esecret = cu.encrypt(secret, m_pwd, conf_file)
     v1 = cu.decrypt(esecret, m_pwd, conf_file)
@@ -64,7 +85,7 @@ def test_encrypt_decrypt_no_config():
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
     secret = u"mamma"
-    key = cu._get_encripted_key(c_pwd.encode('latin1')).decode("latin1")    
+    key = cu.encrypt_key(c_pwd)    
     esecret = cu.encrypt(secret, m_pwd, salt=key)
     v1 = cu.decrypt(esecret, m_pwd, salt=key)
     esecret2 = cu.encrypt(secret, m_pwd, salt=key)

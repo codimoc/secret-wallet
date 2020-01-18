@@ -1,7 +1,10 @@
 import os
+import json
 import configparser
 from secretwallet.constants import parameters, CONFIG_FILE, CREDENTIALS_FILE
 from secretwallet.utils.fileutils import touch
+from secretwallet.utils.cryptutils import encrypt_key
+from botocore.credentials import get_credentials
 
 def has_configuration(config_file=CONFIG_FILE):
     """Checks if the configurations file CONFIG_FILE exists
@@ -40,7 +43,7 @@ def set_credentials(config_file, access_key, secret_access_key,region):
         parser.write(f)
 
 
-def get_credentials(config_file):
+def get_credentials(config_file=CREDENTIALS_FILE):
     """Retrieves AWS credentials
     input:
     config_file       a path to the AWS configuration file
@@ -53,3 +56,101 @@ def get_credentials(config_file):
         parser.read(config_file)
         ret = parser[parameters.get_profile_name()]
     return ret
+
+def get_credentials_sections(config_file=CREDENTIALS_FILE):
+    """Retrieves the AWS credentials sections
+    input:
+    config_file       a path to the AWS configuration file
+    output:
+    a list of AWS credentials sections
+    """
+    parser = configparser.ConfigParser()
+    ret = []
+    if has_credentials(config_file):
+        parser.read(config_file)
+        ret = parser.sections()
+    return ret
+
+
+def get_configuration(config_file = CONFIG_FILE):
+    """Read the configuration file and returns it as a dictionary
+    input:
+    config_file    a path to the configuration file
+    output:
+    A data dictionary containing the configuration"""
+    if not os.path.exists(config_file):
+        raise FileNotFoundError("Missing configuration file: run the configuration script secret_wallet_conf")
+    with open(config_file, 'r') as cfile:
+        return json.load(cfile)
+    
+def set_configuration(conf_key, profile = None, table = None, salt = None, config_file = CONFIG_FILE):
+    """This writes the system configuration file with the specified overrides and the encrypted salt
+       If the configuration file exists, this function returns an error message, since reconfiguing the salt
+       requires changes to all the encripted information in the remote DB.
+       If the configuration already exists it should raise an error
+       input:
+       conf_key        the encrypted configuration key
+       profile          the override of the default profile (optionall)
+       table            the override of the default table name  (optional)
+       salt             the override of the default pre-salt string
+       config_file      the configuration file, defaults to fixed location in CONFIG_FILE
+       """
+    if has_configuration(config_file):
+        raise RuntimeError("Found pre-existing configuration in %s. To reconfigure the secretes use the reconf command"%config_file)
+    
+    conf = {'key': conf_key}
+    if profile is not None:
+        conf['profile'] = profile
+    if table is not None:
+        conf['table_name'] = table
+    if salt is not None:
+        conf['salt'] = salt
+    os.makedirs(os.path.dirname(config_file), exist_ok=True)
+    with open(config_file, 'w') as cfile:
+        json.dump(conf, cfile)
+    
+def load_configurations(conf_file = CONFIG_FILE, credentials_file = CREDENTIALS_FILE):
+    """
+    Loads the configuration and aws credentials
+    """
+    try:
+        if not has_credentials(credentials_file):
+            raise FileNotFoundError("Missing configuration file: run the configuration script secret_wallet_conf")    
+        
+        if not has_configuration(conf_file):
+            raise FileNotFoundError("Missing configuration file: run the configuration script secret_wallet_conf")
+        parameters.set_data(get_configuration(conf_file))
+    except Exception as e:
+        print(e)
+        exit(1)
+        
+def make_configurations():
+    "Main configuration script"
+    print("Main configuration script for your secret wallet.")
+    print("Please press return to accept the pre-set values in square brackets")
+    print("or type a new value:")
+    
+    profile           = input('{0:30}[{1:>30}] = '.format('AWS profile name',parameters.get_profile_name()))
+    if len(profile) == 0:
+        profile = parameters.get_profile_name()
+    if has_credentials() and profile in get_credentials_sections():
+        print('The AWS profile {0} is alread used. Choose another or reconfigure'.format(profile))
+        exit(1)
+    parameters.set_profile_name(profile)
+    access_key        = input('{0:30}[{1:>30}] = '.format('AWS access key id',''))
+    secret_access_key = input('{0:30}[{1:>30}] = '.format('AWS secret access key',''))
+    region            = input('{0:30}[{1:>30}] = '.format('AWS region',''))
+    #TODO: ask to confirm
+    set_credentials(CREDENTIALS_FILE, access_key, secret_access_key, region)
+    if has_configuration():
+        print('The secret-wallet has been configured previously. To protect secrets, you need to call a reconfigure procedure')
+        exit(1)    
+    conf_pwd          = input('{0:30}[{1:>30}] = '.format('Configuration password',''))
+    conf_key = encrypt_key(conf_pwd)
+    table             = input('{0:30}[{1:>30}] = '.format('DynameDB table name',parameters.get_table_name()))
+    if len(table) == 0:
+        table = parameters.get_table_name()
+    #TODO: ask to confirm     
+    set_configuration(conf_key, profile, table, None, CONFIG_FILE)
+    
+    

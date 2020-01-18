@@ -6,8 +6,9 @@ Created on 1 Jan 2020
 
 import argparse
 import sys
-from secretwallet.utils.cryptutils import configure
+from secretwallet.main.configuration import set_configuration
 from secretwallet.utils.dbutils import has_secret,get_secret, insert_secret, list_secrets, update_secret, delete_secret
+from secretwallet.utils.cryptutils import encrypt_key
 
 
 class Parser(object):
@@ -54,8 +55,9 @@ secretwallet <command> -h
                             help='The configuration password to encrypt the secret key')
         args = parser.parse_args(sys.argv[2:])
         print('Running init with arguments %s' % args)
+        #TODO: change here
         try:
-            configure(args.cfg_pwd)
+            set_configuration(encrypt_key(args.cfg_pwd))
         except RuntimeError as e:
             print(e)
         

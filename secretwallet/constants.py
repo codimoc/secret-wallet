@@ -49,6 +49,9 @@ class Parameters(object):
             return self.__data['profile']
         else:
             return AWS_PROFILE
+    
+    def set_profile_name(self, profile):
+        self.__data['profile'] = profile
         
     def get_pre_salt(self):
         if 'pre_salt' in self.__data:
@@ -60,7 +63,13 @@ class Parameters(object):
         if 'table_name' in self.__data:
             return self.__data['table_name']
         else:
-            return SECRET_ACCESS_TABLE         
+            return SECRET_ACCESS_TABLE 
+    
+    def get_salt_key(self):
+        if 'key' in self.__data:
+            return self.__data['key']
+        else:
+            raise RuntimeError('The encrypted key for the salt was not found')        
 
 #single object        
 parameters = Parameters()

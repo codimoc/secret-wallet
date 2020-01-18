@@ -22,6 +22,7 @@ setuptools.setup(
     install_requires = ['boto3','cryptography'],
     entry_points={
         'console_scripts': [
-            'secret_wallet = secretwallet.main:main'],
+            'secret_wallet = secretwallet.main:main',
+            'secret_wallet_conf = secretwallet.main:configure'],
     }    
 )
