@@ -4,7 +4,6 @@ import configparser
 from secretwallet.constants import parameters, CONFIG_FILE, CREDENTIALS_FILE
 from secretwallet.utils.fileutils import touch
 from secretwallet.utils.cryptutils import encrypt_key
-from botocore.credentials import get_credentials
 
 def has_configuration(config_file=CONFIG_FILE):
     """Checks if the configurations file CONFIG_FILE exists
@@ -124,33 +123,60 @@ def load_configurations(conf_file = CONFIG_FILE, credentials_file = CREDENTIALS_
         print(e)
         exit(1)
         
+def display_configuration(conf_file, content, conf):
+    print(f"\nThe {content} at {conf_file}")
+    for k,v in conf.items():
+        print(f'{k:30} = {v:<40}')
+        
+        
 def make_configurations():
     "Main configuration script"
     print("Main configuration script for your secret wallet.")
-    print("Please press return to accept the pre-set values in square brackets")
-    print("or type a new value:")
+    print("Please press return to accept the pre-set values in square brackets, or type a new value:\n")
     
     profile           = input('{0:30}[{1:>30}] = '.format('AWS profile name',parameters.get_profile_name()))
     if len(profile) == 0:
         profile = parameters.get_profile_name()
     if has_credentials() and profile in get_credentials_sections():
-        print('The AWS profile {0} is alread used. Choose another or reconfigure'.format(profile))
+        print('The AWS profile {0} is already in use. Choose another or reconfigure'.format(profile))
         exit(1)
     parameters.set_profile_name(profile)
     access_key        = input('{0:30}[{1:>30}] = '.format('AWS access key id',''))
     secret_access_key = input('{0:30}[{1:>30}] = '.format('AWS secret access key',''))
     region            = input('{0:30}[{1:>30}] = '.format('AWS region',''))
-    #TODO: ask to confirm
-    set_credentials(CREDENTIALS_FILE, access_key, secret_access_key, region)
+    cred = {'aws access key id'     : access_key,
+            'aws seceret access key': secret_access_key,
+            'aws region'            : region}
+    
+    display_configuration(CREDENTIALS_FILE, 'AWS credentials are located',cred)
+    answ = input("\nDo you want to set the credentials? (yes|skip|exit) ")
+    if answ.lower().startswith('y'):
+        set_credentials(CREDENTIALS_FILE, access_key, secret_access_key, region)
+    elif answ.lower().startswith('s'):
+        pass
+    else:
+        exit(1)
+        
     if has_configuration():
         print('The secret-wallet has been configured previously. To protect secrets, you need to call a reconfigure procedure')
         exit(1)    
+    profile           = input('{0:30}[{1:>30}] = '.format('AWS profile name',parameters.get_profile_name()))
+    if len(profile) == 0:
+        profile = parameters.get_profile_name()        
     conf_pwd          = input('{0:30}[{1:>30}] = '.format('Configuration password',''))
     conf_key = encrypt_key(conf_pwd)
     table             = input('{0:30}[{1:>30}] = '.format('DynameDB table name',parameters.get_table_name()))
     if len(table) == 0:
         table = parameters.get_table_name()
-    #TODO: ask to confirm     
-    set_configuration(conf_key, profile, table, None, CONFIG_FILE)
+        
+    conf = {'configuration key': conf_key,
+            'profile': profile,
+            'table': table}
+    display_configuration(CONFIG_FILE, 'secret wallet configuration is located', conf)     
+    answ = input("\nDo you want to set the configuration parameters? (yes|exit) ")
+    if answ.lower().startswith('y'):
+        set_configuration(conf_key, profile, table, None, CONFIG_FILE)
+    else:
+        exit(1)    
     
     

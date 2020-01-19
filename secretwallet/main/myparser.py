@@ -24,7 +24,6 @@ The list of secretwallet commands are:
    delete          Remove a secret
    list            list all secretwallet in a given domain
    query           query secretwallet based on a condition
-   init            create the initial configuration for a client device
    reconf          change an existing configuration
    help            print the main help page 
    ....
@@ -33,7 +32,7 @@ For individual help type:
 secretwallet <command> -h
 ''')
         parser.add_argument('command',
-                            choices=['set','get','delete','list','query','init','reconf','help'],
+                            choices=['set','get','delete','list','query','reconf','help'],
                             help='Subcommand to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
@@ -43,24 +42,7 @@ secretwallet <command> -h
             exit(1)
         # use dispatch pattern to invoke method with same name
         getattr(self, args.command)()
-        
-    def init(self):
-        parser = argparse.ArgumentParser(
-            description='Create the initial configuration on the client device',
-            prog='secretwallet init')
-        #required arguments
-        parser.add_argument('-c',
-                            dest='cfg_pwd',
-                            required=True,
-                            help='The configuration password to encrypt the secret key')
-        args = parser.parse_args(sys.argv[2:])
-        print('Running init with arguments %s' % args)
-        #TODO: change here
-        try:
-            set_configuration(encrypt_key(args.cfg_pwd))
-        except RuntimeError as e:
-            print(e)
-        
+                
         
     def set(self):
         parser = argparse.ArgumentParser(
