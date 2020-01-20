@@ -11,9 +11,71 @@ from secretwallet.constants import parameters, CONFIG_FILE
 from secretwallet.utils.cryptutils import encrypt, decrypt
 
 def _get_table():
+    #TODO: manage Session in a better way. The table resource should be stored in the Session
     session = boto3.session.Session(profile_name=parameters.get_profile_name())
     dynamodb = session.resource('dynamodb')
     return dynamodb.Table(parameters.get_table_name())
+
+def _drop_table(table_name):
+    #TODO: manage Session in a better way. The table resource should be stored in the Session
+    session = boto3.session.Session(profile_name=parameters.get_profile_name())
+    dynamodb = session.resource('dynamodb')
+    dynamodb.Table(table_name).delete()    
+
+def _has_table(table_name):
+    "Checks if the table exists"
+    #TODO: manage Session in a better way. The table resource should be stored in the Session
+    session = boto3.session.Session(profile_name=parameters.get_profile_name())
+    dynamodb = session.resource('dynamodb')
+    names = [x.table_name for x in dynamodb.tables.all()]
+    return table_name in names
+
+def create_table(table_name=parameters.get_table_name()):
+    "Creates a table if it does not exist"
+    if _has_table(table_name):
+        return
+    session = boto3.session.Session(profile_name=parameters.get_profile_name())
+    dynamodb = session.resource('dynamodb')
+    try:    
+        dynamodb.create_table(
+            TableName=f"{table_name}",
+            # Declare your Primary Key in the KeySchema argument
+            KeySchema=[
+                {
+                    "KeyType": "HASH",
+                    "AttributeName": "domain"
+                },
+                {
+                    "KeyType": "RANGE",
+                    "AttributeName": "access"
+                }
+            ],        
+            
+            # Any attributes used in KeySchema or Indexes must be declared in AttributeDefinitions
+            AttributeDefinitions=[
+                {
+                    "AttributeName": "access",
+                    "AttributeType": "S"
+                },
+                {
+                    "AttributeName": "domain",
+                    "AttributeType": "S"
+                }
+            ],        
+            # ProvisionedThroughput controls the amount of data you can read or write to DynamoDB per second.
+            # You can control read and write capacity independently.
+            ProvisionedThroughput={
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 5
+            },        
+        )
+    except Exception:
+        #TODO: manage exception below
+        pass
+    if _has_table(table_name):
+        #TODO: add logging
+        print(f"Table {table_name} has been created")
+     
 
 def insert_secret(domain, access, uid, pwd, info, mem_pwd, conf_file = CONFIG_FILE, salt = None):
     """Insert a secret access record in the cloud DB

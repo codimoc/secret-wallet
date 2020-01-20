@@ -246,4 +246,9 @@ def test_update_missing_secret_no_effect():
         res = du.get_secret(domain, access, m_pwd, salt=key)
         assert old_ts ==  res['timestamp']            
     finally:
-        du.delete_secret(domain, access)        
+        du.delete_secret(domain, access)
+        
+def test_has_table():
+    assert True  == du._has_table(parameters.get_table_name())
+    assert False == du._has_table('new_table')
+    

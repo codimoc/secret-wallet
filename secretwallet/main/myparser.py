@@ -6,9 +6,7 @@ Created on 1 Jan 2020
 
 import argparse
 import sys
-from secretwallet.main.configuration import set_configuration
 from secretwallet.utils.dbutils import has_secret,get_secret, insert_secret, list_secrets, update_secret, delete_secret
-from secretwallet.utils.cryptutils import encrypt_key
 
 
 class Parser(object):
@@ -84,7 +82,7 @@ secretwallet <command> -h
             if not has_secret(args.domain, args.access): 
                 insert_secret(args.domain, args.access, args.uid, args.pwd, info , args.memorable)
             else:
-                update_secret(args.domain, args.access, args.uid, args.pwd, info, args.memorable)
+                update_secret(args.domain, args.access, args.uid, args.pwd, args.info_key, args.info_value, args.memorable)
         except Exception as e:
             print(repr(e))
         
