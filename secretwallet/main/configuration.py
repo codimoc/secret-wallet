@@ -4,7 +4,7 @@ import configparser
 from secretwallet.constants import parameters, CONFIG_FILE, CREDENTIALS_FILE
 from secretwallet.utils.fileutils import touch
 from secretwallet.utils.cryptutils import encrypt_key
-from secretwallet.utils.dbutils import create_table
+from secretwallet.utils.dbutils import create_table, has_table
 
 def has_configuration(config_file=CONFIG_FILE):
     """Checks if the configurations file CONFIG_FILE exists
@@ -95,7 +95,7 @@ def set_configuration(conf_key, profile = None, table = None, salt = None, confi
        salt             the override of the default pre-salt string
        config_file      the configuration file, defaults to fixed location in CONFIG_FILE
        """
-    if has_configuration(config_file):
+    if has_configuration(config_file) and has_table(table):
         raise RuntimeError("Found pre-existing configuration in %s. To reconfigure the secretes use the reconf command"%config_file)
     
     conf = {'key': conf_key}
@@ -161,18 +161,19 @@ def make_configurations():
             exit(1)
         
     answ = input("\nDo you want to configure the the secret-wallet parameters? (yes|skip) ")
-    if answ.lower().startswith('y'):        
-        if has_configuration():
-            print('The secret-wallet has been configured previously. To protect secrets, you need to call a reconfigure procedure')
-            exit(1)    
+    if answ.lower().startswith('y'):
         profile           = input('{0:30}[{1:>30}] = '.format('AWS profile name',parameters.get_profile_name()))
         if len(profile) == 0:
             profile = parameters.get_profile_name()        
-        conf_pwd          = input('{0:30}[{1:>30}] = '.format('Configuration password',''))
-        conf_key = encrypt_key(conf_pwd)
         table             = input('{0:30}[{1:>30}] = '.format('DynameDB table name',parameters.get_table_name()))
         if len(table) == 0:
-            table = parameters.get_table_name()
+            table = parameters.get_table_name()                
+        if has_configuration() and has_table(table):
+            
+            print('The secret-wallet has been configured previously for the same table.\nTo protect secrets, you need to call a reconfigure procedure')
+            exit(1)    
+        conf_pwd          = input('{0:30}[{1:>30}] = '.format('Configuration password',''))
+        conf_key = encrypt_key(conf_pwd)
             
         conf = {'configuration key': conf_key,
                 'profile': profile,

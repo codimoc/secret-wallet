@@ -22,7 +22,7 @@ def _drop_table(table_name):
     dynamodb = session.resource('dynamodb')
     dynamodb.Table(table_name).delete()    
 
-def _has_table(table_name):
+def has_table(table_name):
     "Checks if the table exists"
     #TODO: manage Session in a better way. The table resource should be stored in the Session
     session = boto3.session.Session(profile_name=parameters.get_profile_name())
@@ -32,7 +32,7 @@ def _has_table(table_name):
 
 def create_table(table_name=parameters.get_table_name()):
     "Creates a table if it does not exist"
-    if _has_table(table_name):
+    if has_table(table_name):
         return
     session = boto3.session.Session(profile_name=parameters.get_profile_name())
     dynamodb = session.resource('dynamodb')
@@ -72,7 +72,7 @@ def create_table(table_name=parameters.get_table_name()):
     except Exception:
         #TODO: manage exception below
         pass
-    if _has_table(table_name):
+    if has_table(table_name):
         #TODO: add logging
         print(f"Table {table_name} has been created")
      

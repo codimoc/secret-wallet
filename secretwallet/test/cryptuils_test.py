@@ -23,13 +23,6 @@ def set_up():
         os.rmdir(os.path.dirname(conf_file))
     parameters.clear()
     
-
-def test_configure_config_already_there(set_up):
-    conf_file = set_up
-    #create the file
-    touch(conf_file)
-    with pytest.raises(RuntimeError, match="Found pre-existing"):
-        set_configuration(encrypt_key('passwd'), None, None, None, conf_file)
         
 def test_get_encrypted_key():
     passwd = u"passwd"
