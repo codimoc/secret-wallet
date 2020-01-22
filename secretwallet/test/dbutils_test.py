@@ -1,8 +1,3 @@
-'''
-Created on 30 Dec 2019
-
-@author: gualtiero
-'''
 import pytest
 import os
 import secretwallet.utils.cryptutils as cu
