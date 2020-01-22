@@ -43,6 +43,7 @@ secretwallet <command> -h
                 
         
     def set(self):
+        #TODO: manage memorable password
         parser = argparse.ArgumentParser(
             description='Insert a new secret',
             prog='secretwallet set')
@@ -87,6 +88,7 @@ secretwallet <command> -h
             print(repr(e))
         
     def get(self):
+        #TODO: manage memorable password
         parser = argparse.ArgumentParser(
             description='Retrieves a secret',
             prog='secretwallet get')
