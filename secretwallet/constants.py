@@ -16,6 +16,12 @@ SECRET_ACCESS_TABLE='access_secrets'
 #AWS configuration
 AWS_PROFILE='secret-wallet'
 
+#session parameters
+SESSION_ADDRESS = ('localhost',6714)
+SESSION_PWD = b'yooCani3'
+SESSION_TIMEOUT  = 60  #number of second the mem password is kept fresh
+SESSION_LIFETIME = 600 #lifetime in seconds of the entire session
+
 #an object to store configurable parameters
 
 def singleton(cls):
