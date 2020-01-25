@@ -6,8 +6,7 @@ Created on 16 Dec 2019
 
 import pytest
 import os
-import secretwallet.utils.cryptutils as cu
-from secretwallet.utils.fileutils import touch 
+import secretwallet.utils.cryptutils as cu 
 from secretwallet.main.configuration import set_configuration, get_configuration
 from secretwallet.utils.cryptutils import encrypt_key
 from secretwallet.constants import parameters
