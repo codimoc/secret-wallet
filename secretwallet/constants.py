@@ -17,7 +17,7 @@ SECRET_ACCESS_TABLE='access_secrets'
 AWS_PROFILE='secret-wallet'
 
 #session parameters
-SESSION_ADDRESS = ('localhost',6714)
+SESSION_ADDRESS = ('localhost',6417)
 SESSION_PWD = b'yooCani3'
 SESSION_TIMEOUT  = 60  #number of second the mem password is kept fresh
 SESSION_LIFETIME = 600 #lifetime in seconds of the entire session
@@ -75,7 +75,39 @@ class Parameters(object):
         if 'key' in self.__data:
             return self.__data['key']
         else:
-            raise RuntimeError('The encrypted key for the salt was not found')        
+            raise RuntimeError('The encrypted key for the salt was not found')
+    
+    def get_session_timeout(self):
+        if 'session_timeout' in self.__data:
+            return self.__data['session_timeout']
+        else:
+            return SESSION_TIMEOUT 
+        
+    def set_session_timeout(self, timeout):
+        self.__data['session_timeout'] = timeout
+        
+
+    def get_session_lifetime(self):
+        if 'session_lifetime' in self.__data:
+            return self.__data['session_lifetime']
+        else:
+            return SESSION_LIFETIME 
+                
+    def set_session_lifetime(self, lifetime):
+        self.__data['session_lifetime'] = lifetime
+        
+    def get_session_address(self):
+        if 'session_address' in self.__data:
+            return self.__data['session_address']
+        else:
+            return SESSION_ADDRESS
+        
+    def get_session_connection_password(self):
+        if 'session_connection_password' in self.__data:
+            return self.__data['session_connection_password']
+        else:
+            return SESSION_PWD                        
+
 
 #single object        
 parameters = Parameters()

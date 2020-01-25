@@ -3,16 +3,18 @@ import datetime
 from multiprocessing import Process
 from multiprocessing.connection import Client, Listener
 from time import sleep
-from secretwallet.constants import SESSION_ADDRESS, SESSION_PWD, SESSION_LIFETIME, SESSION_TIMEOUT
+from secretwallet.constants import parameters
 
 
-def session(seed):
+def session_listener(seed, timeout):
     """ Session service function with an initial value as a seed
-    input: seed the initial value stored in the session
+    input: seed    the initial value stored in the session
+           timeout the validity period of the session value (in seconds 
     """
-    serv = Listener(SESSION_ADDRESS, authkey=SESSION_PWD)
+    print("Listener starts")
+    serv = Listener(parameters.get_session_address(), authkey=parameters.get_session_connection_password())
     serv.password = seed
-    serv.pwd_timeout = SESSION_TIMEOUT
+    serv.pwd_timeout = timeout
     serv.start_time = datetime.datetime.now()
     serv.origin_time = datetime.datetime.now()    
     while True:    
@@ -39,24 +41,30 @@ def session(seed):
                 break
             else:
                 conn.send({'status':'bad command','password':None})
+    print("Listener ends")
             
 
-def sweeper():
+def session_sweeper(lifetime):
     "The process that will kill the session daemon eventually"
-    sleep(SESSION_LIFETIME)
-    conn = Client(SESSION_ADDRESS, authkey=SESSION_PWD)    
+    print("sweeper starts")
+    sleep(lifetime)
+    conn = Client(parameters.get_session_address(), authkey=parameters.get_session_connection_password())    
     conn.send({'action':'stop','password':None})
     #TODO: add logging
     print(conn.recv())
+    print("sweeper ends")
+            
+def my_session(value, lifetime, timeout):
+    p = Process(target=session_sweeper, args=(lifetime,))           
+    q = Process(target=session_listener, args=(value, timeout))
     
-def start_service(seed):
-    """ Starts the session service
-    input: seed the initial value stored in the session
-    """
-    p = Process(target=sweeper())
-    p.daemon = True
-    p.start()    
-
-    #this should be at the end                
+    p.start()
+    q.start()
+    
+    p.join()
+    q.join()
+    
+def start_my_session(value, lifetime, timeout):             
     with daemon.DaemonContext():
-        session(seed)    
+        my_session(value, lifetime, timeout)        
+    

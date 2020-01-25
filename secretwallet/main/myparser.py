@@ -7,7 +7,9 @@ Created on 1 Jan 2020
 import argparse
 import sys
 from secretwallet.utils.dbutils import has_secret,get_secret, insert_secret, list_secrets, update_secret, delete_secret
-
+from secretwallet.constants import parameters
+from secretwallet.session.service import start_my_session
+from secretwallet.session.client import get_password, set_password, stop_service, test_connection
 
 class Parser(object):
 
@@ -30,7 +32,7 @@ For individual help type:
 secretwallet <command> -h
 ''')
         parser.add_argument('command',
-                            choices=['set','get','delete','list','query','reconf','help'],
+                            choices=['set','get','delete','list','query','reconf','help','session','client'],
                             help='Subcommand to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
@@ -149,4 +151,68 @@ secretwallet <command> -h
             print(repr(e))                    
         
     def help(self):
-        self._parser.print_help()        
+        self._parser.print_help()
+        
+        
+        
+    #TODO: Below here is experimental. Remove at the end    
+    def session(self):
+        parser = argparse.ArgumentParser(
+            description='Starts a secretwallet session service',
+            prog='secretwallet session')
+        #optional arguments
+        parser.add_argument('-l',
+                            dest = 'lifetime',
+                            type = int,
+                            help='The lifetime in seconds of the session',
+                            default = parameters.get_session_lifetime())
+        parser.add_argument('-t',
+                            dest = 'timeout',
+                            type = int,
+                            help='The timeout in seconds for the session value',
+                            default = parameters.get_session_timeout())
+        parser.add_argument('-v',
+                            dest = 'value',
+                            help='The value to store in the session',
+                            default='not set')                
+        args = parser.parse_args(sys.argv[2:])
+        print('Starting a secret wallet session with parameters %s'%args)
+        try:
+            start_my_session(args.value, args.lifetime, args.timeout)
+        except Exception as e:
+            print(repr(e))
+            
+            
+    def client(self):
+        parser = argparse.ArgumentParser(
+            description='Starts a secretwallet client',
+            prog='secretwallet client')
+        #optional arguments
+        parser.add_argument('-a',
+                            dest = 'action',
+                            choices=['get','set','stop','test'],
+                            help='The client action',
+                            default = 'get')
+        parser.add_argument('-v',
+                            dest = 'value',
+                            help='The value to store in the session',
+                            default='not set')                
+        args = parser.parse_args(sys.argv[2:])
+        print('Starting a secret wallet client with parameters %s'%args)
+        try:
+            if args.action == 'get':
+                print(get_password())
+            elif args.action == 'set':
+                set_password(args.value)
+            elif args.action == 'stop':
+                stop_service()
+            elif args.action == 'test':
+                if test_connection():
+                    print('connected')
+                else:
+                    print('not connected')                
+        except Exception as e:
+            print(repr(e))                           
+            
+            
+            
