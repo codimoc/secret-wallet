@@ -22,6 +22,14 @@ SESSION_PWD = b'yooCani3'
 SESSION_TIMEOUT  = 60  #number of second the mem password is kept fresh
 SESSION_LIFETIME = 600 #lifetime in seconds of the entire session
 
+
+#Password policy
+PWD_LENGTH = 8 #at least 8 chars long
+PWD_NUMBERS=1  #at least one number
+PWD_SPECIAL=1  #at least one special char
+PWD_UPPER = 1  #at least an upper case
+
+
 #an object to store configurable parameters
 
 def singleton(cls):
@@ -70,6 +78,9 @@ class Parameters(object):
             return self.__data['table_name']
         else:
             return SECRET_ACCESS_TABLE 
+        
+    def set_table_name(self, table):
+        self.__data['table_name'] = table
     
     def get_salt_key(self):
         if 'key' in self.__data:

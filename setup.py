@@ -40,7 +40,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    install_requires = ['boto3','cryptography','python-daemon'],
+    install_requires = ['boto3','cryptography','password_strength','python-daemon'],
     entry_points={
         'console_scripts': [
             'secret_wallet = secretwallet.main:main',

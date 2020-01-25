@@ -5,6 +5,7 @@ from secretwallet.constants import parameters, CONFIG_FILE, CREDENTIALS_FILE
 from secretwallet.utils.fileutils import touch
 from secretwallet.utils.cryptutils import encrypt_key
 from secretwallet.utils.dbutils import create_table, has_table
+from secretwallet.utils.password_manager import get_password
 
 def has_configuration(config_file=CONFIG_FILE):
     """Checks if the configurations file CONFIG_FILE exists
@@ -132,7 +133,7 @@ def display_configuration(conf_file, content, conf):
         
 def make_configurations():
     "Main configuration script"
-    print("Main configuration script for your secret wallet.")
+    print("\nMain configuration script for your secret wallet.")
     print("Please press return to accept the pre-set values in square brackets, or type a new value:\n")
     
     answ = input("\nDo you want to configure the AWS credentials? (yes|skip) ")
@@ -172,18 +173,23 @@ def make_configurations():
             
             print('The secret-wallet has been configured previously for the same table.\nTo protect secrets, you need to call a reconfigure procedure')
             exit(1)    
-        conf_pwd          = input('{0:30}[{1:>30}] = '.format('Configuration password',''))
+        conf_pwd = get_password('Configuration password', 6)
         conf_key = encrypt_key(conf_pwd)
             
         conf = {'configuration key': conf_key,
                 'profile': profile,
                 'table': table}
         parameters.set_profile_name(profile)
+        parameters.set_table_name(table)
         display_configuration(CONFIG_FILE, 'secret wallet configuration is located', conf)     
         answ = input("\nDo you want to set the configuration parameters? (yes|exit) ")
         if answ.lower().startswith('y'):
-            set_configuration(conf_key, profile, table, None, CONFIG_FILE)
-            create_table(table)
+            try:
+                set_configuration(conf_key, profile, table, None, CONFIG_FILE)
+                create_table(table)
+            except Exception as e:
+                print(e)
+                print("Could not write the configuration file. Make sure you have AWS connection and try again")
         else:
             exit(1)    
     
