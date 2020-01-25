@@ -1,4 +1,5 @@
 import setuptools
+from distutils.tests import test_suite
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -24,5 +25,7 @@ setuptools.setup(
         'console_scripts': [
             'secret_wallet = secretwallet.main:main',
             'secret_wallet_conf = secretwallet.main:configure'],
-    }    
+    },
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest']
 )

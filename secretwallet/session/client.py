@@ -25,7 +25,7 @@ def stop_service():
     #TODO: add logging
     print(r)
     
-def test_connection():
+def is_connected():
     try:
         get_password()
         return True

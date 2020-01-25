@@ -9,7 +9,7 @@ import sys
 from secretwallet.utils.dbutils import has_secret,get_secret, insert_secret, list_secrets, update_secret, delete_secret
 from secretwallet.constants import parameters
 from secretwallet.session.service import start_my_session
-from secretwallet.session.client import get_password, set_password, stop_service, test_connection
+from secretwallet.session.client import get_password, set_password, stop_service, is_connected
 
 class Parser(object):
 
@@ -207,7 +207,7 @@ secretwallet <command> -h
             elif args.action == 'stop':
                 stop_service()
             elif args.action == 'test':
-                if test_connection():
+                if is_connected():
                     print('connected')
                 else:
                     print('not connected')                
