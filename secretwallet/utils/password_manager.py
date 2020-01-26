@@ -1,6 +1,8 @@
 from getpass import getpass
 from password_strength import PasswordPolicy
-from secretwallet.constants import PWD_LENGTH, PWD_NUMBERS, PWD_SPECIAL, PWD_UPPER
+from secretwallet.constants import parameters, PWD_LENGTH, PWD_NUMBERS, PWD_SPECIAL, PWD_UPPER, PWD_ATTEMPTS
+import secretwallet.session.client as sc
+from secretwallet.session.service import start_my_session
 
 __policy = PasswordPolicy.from_names(length  = PWD_LENGTH,
                                    uppercase = PWD_UPPER,
@@ -38,4 +40,28 @@ def get_password(prompt, attempts):
             continue
         return p1 
     print("Too many attempts at entering a valid password. Goodbye!")
-    exit(1)       
+    exit(1)
+    
+def get_password_untested(prompt):
+    return getpass(f"{prompt} :")
+    
+def get_memorable_password(tested = False):
+    memorable = None
+    if sc.is_connected():
+        res = sc.get_session_password()
+        if res[0] == 'fresh':
+            return res[1]
+        else:
+            if tested:
+                memorable = get_password("Enter the memorable password", PWD_ATTEMPTS)
+            else:
+                memorable = get_password_untested("Enter the memorable password")
+            sc.set_session_password(memorable)
+            return memorable
+    else: #session not running
+        if tested:
+            memorable = get_password("Enter the memorable password", PWD_ATTEMPTS)
+        else:
+            memorable = get_password_untested("Enter the memorable password")
+        start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
+        return memorable

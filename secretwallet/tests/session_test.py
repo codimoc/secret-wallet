@@ -1,6 +1,6 @@
 import pytest
 from secretwallet.session.service import my_session
-from secretwallet.session.client import get_password, set_password, stop_service, is_connected
+from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
 from multiprocessing import Process
 from time import sleep
 
@@ -19,25 +19,25 @@ def set_up():
 
 def test_get_password(set_up):
     sleep(1)
-    assert 'message' == get_password()[1]
+    assert 'message' == get_session_password()[1]
     
 def test_set_password(set_up):
     sleep(1)
-    res = get_password()
+    res = get_session_password()
     assert 'fresh'   == res[0]
     assert 'message' == res[1]
-    set_password('nuova')
-    res = get_password()
+    set_session_password('nuova')
+    res = get_session_password()
     assert 'fresh'   == res[0]
     assert 'nuova' == res[1]
     
 def test_expiry_password(set_up):
     sleep(1)
-    res = get_password()
+    res = get_session_password()
     assert 'fresh'   == res[0]
     assert 'message' == res[1]
     sleep(5)
-    res = get_password()
+    res = get_session_password()
     assert 'stale'   == res[0]
     assert res[1] is None
     

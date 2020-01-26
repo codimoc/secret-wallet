@@ -24,6 +24,7 @@ SESSION_LIFETIME = 600 #lifetime in seconds of the entire session
 
 
 #Password policy
+PWD_ATTEMPTS = 6 #number of attempts to get a good password
 PWD_LENGTH = 8 #at least 8 chars long
 PWD_NUMBERS=1  #at least one number
 PWD_SPECIAL=1  #at least one special char

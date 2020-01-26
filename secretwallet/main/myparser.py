@@ -9,7 +9,8 @@ import sys
 from secretwallet.utils.dbutils import has_secret,get_secret, insert_secret, list_secrets, update_secret, delete_secret
 from secretwallet.constants import parameters
 from secretwallet.session.service import start_my_session
-from secretwallet.session.client import get_password, set_password, stop_service, is_connected
+from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
+import secretwallet.utils.password_manager as pm
 
 class Parser(object):
 
@@ -25,6 +26,8 @@ The list of secretwallet commands are:
    list            list all secretwallet in a given domain
    query           query secretwallet based on a condition
    reconf          change an existing configuration
+   session         (testing) start a session to store the memorable password between consecutive calls
+   client          (testing) retrieves the memorable password from the running session
    help            print the main help page 
    ....
    
@@ -58,10 +61,6 @@ secretwallet <command> -h
                         dest='access',
                         required=True,
                         help='The sub=domain (sub-category or access) of the secret')
-        parser.add_argument('-m',
-                        dest='memorable',
-                        required=True,
-                        help='The memorable password to be used for encryption/decryption')    
         #optional arguments
         parser.add_argument('-u',
                             '--uid',
@@ -82,10 +81,11 @@ secretwallet <command> -h
         else:
             info = {args.info_key :args.info_value}                       
         try:
+            memorable = pm.get_memorable_password(True)
             if not has_secret(args.domain, args.access): 
-                insert_secret(args.domain, args.access, args.uid, args.pwd, info , args.memorable)
+                insert_secret(args.domain, args.access, args.uid, args.pwd, info , memorable)
             else:
-                update_secret(args.domain, args.access, args.uid, args.pwd, args.info_key, args.info_value, args.memorable)
+                update_secret(args.domain, args.access, args.uid, args.pwd, args.info_key, args.info_value, memorable)
         except Exception as e:
             print(repr(e))
         
@@ -103,14 +103,11 @@ secretwallet <command> -h
                         dest='access',
                         required=True,
                         help='The sub=domain (sub-category or access) of the secret')
-        parser.add_argument('-m',
-                        dest='memorable',
-                        required=True,
-                        help='The memorable password to be used for encryption/decryption')    
         args = parser.parse_args(sys.argv[2:])
         print('Running get with arguments %s' % args)
         try:
-            print(get_secret(args.domain, args.access, args.memorable))
+            memorable = pm.get_memorable_password(False)
+            print(get_secret(args.domain, args.access, memorable))
         except Exception as e:
             print(repr(e))
             
@@ -154,7 +151,6 @@ secretwallet <command> -h
         
     def help(self):
         self._parser.print_help()
-        
         
         
     #TODO: Below here is experimental. Remove at the end    
@@ -203,9 +199,9 @@ secretwallet <command> -h
         print('Starting a secret wallet client with parameters %s'%args)
         try:
             if args.action == 'get':
-                print(get_password())
+                print(get_session_password())
             elif args.action == 'set':
-                set_password(args.value)
+                set_session_password(args.value)
             elif args.action == 'stop':
                 stop_service()
             elif args.action == 'test':
