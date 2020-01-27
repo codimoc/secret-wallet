@@ -1,6 +1,6 @@
 from getpass import getpass
 from password_strength import PasswordPolicy
-from secretwallet.constants import parameters, PWD_LENGTH, PWD_NUMBERS, PWD_SPECIAL, PWD_UPPER, PWD_ATTEMPTS
+from secretwallet.constants import PWD_LENGTH, PWD_NUMBERS, PWD_SPECIAL, PWD_UPPER, PWD_ATTEMPTS
 import secretwallet.session.client as sc
 from secretwallet.session.service import start_my_session
 
@@ -46,22 +46,30 @@ def get_password_untested(prompt):
     return getpass(f"{prompt} :")
     
 def get_memorable_password(tested = False):
+    """Get the memorable password, either from the live session or from the client prompt.
+    input:
+    tested    a b boolean flag. If true then the password strength is ensured 
+              and the password is checked against a second entry
+    output:
+    return a pair of values (memorable, need_session) where memorable is the
+    memorable password and need_session is a flag that tells if a new session needs to be started. 
+    """
     memorable = None
+    need_session = False
     if sc.is_connected():
         res = sc.get_session_password()
         if res[0] == 'fresh':
-            return res[1]
+            return (res[1], False)
         else:
             if tested:
                 memorable = get_password("Enter the memorable password", PWD_ATTEMPTS)
             else:
                 memorable = get_password_untested("Enter the memorable password")
             sc.set_session_password(memorable)
-            return memorable
+            return (memorable, False)
     else: #session not running
         if tested:
             memorable = get_password("Enter the memorable password", PWD_ATTEMPTS)
         else:
             memorable = get_password_untested("Enter the memorable password")
-        start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
-        return memorable
+        return (memorable,True)

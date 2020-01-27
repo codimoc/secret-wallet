@@ -81,11 +81,13 @@ secretwallet <command> -h
         else:
             info = {args.info_key :args.info_value}                       
         try:
-            memorable = pm.get_memorable_password(True)
+            memorable, need_session = pm.get_memorable_password(True)
             if not has_secret(args.domain, args.access): 
                 insert_secret(args.domain, args.access, args.uid, args.pwd, info , memorable)
             else:
                 update_secret(args.domain, args.access, args.uid, args.pwd, args.info_key, args.info_value, memorable)
+            if need_session:
+                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
         except Exception as e:
             print(repr(e))
         
@@ -106,8 +108,10 @@ secretwallet <command> -h
         args = parser.parse_args(sys.argv[2:])
         print('Running get with arguments %s' % args)
         try:
-            memorable = pm.get_memorable_password(False)
+            memorable, need_session = pm.get_memorable_password(False)
             print(get_secret(args.domain, args.access, memorable))
+            if need_session:
+                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())            
         except Exception as e:
             print(repr(e))
             
