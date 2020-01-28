@@ -55,7 +55,6 @@ def get_memorable_password(tested = False):
     memorable password and need_session is a flag that tells if a new session needs to be started. 
     """
     memorable = None
-    need_session = False
     if sc.is_connected():
         res = sc.get_session_password()
         if res[0] == 'fresh':

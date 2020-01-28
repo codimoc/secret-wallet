@@ -57,6 +57,8 @@ def session_sweeper(lifetime):
 def my_session(value, lifetime, timeout):
     p = Process(target=session_sweeper, args=(lifetime,))           
     q = Process(target=session_listener, args=(value, timeout))
+    p.daemon = True
+    q.daemon = True
     
     p.start()
     q.start()
