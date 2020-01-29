@@ -2,7 +2,6 @@ from getpass import getpass
 from password_strength import PasswordPolicy
 from secretwallet.constants import PWD_LENGTH, PWD_NUMBERS, PWD_SPECIAL, PWD_UPPER, PWD_ATTEMPTS
 import secretwallet.session.client as sc
-from secretwallet.session.service import start_my_session
 
 __policy = PasswordPolicy.from_names(length  = PWD_LENGTH,
                                    uppercase = PWD_UPPER,
