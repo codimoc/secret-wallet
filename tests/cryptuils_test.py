@@ -66,10 +66,10 @@ def test_encrypt_decrypt_secret(set_up):
     set_configuration(encrypt_key(c_pwd), None, None, None, conf_file)
     parameters.set_data(get_configuration(conf_file))
     
-    esecret = cu.encrypt(secret, m_pwd, conf_file)
-    v1 = cu.decrypt(esecret, m_pwd, conf_file)
-    esecret2 = cu.encrypt(secret, m_pwd, conf_file)
-    v2 = cu.decrypt(esecret2, m_pwd, conf_file)
+    esecret = cu.encrypt(secret, m_pwd, parameters.get_salt_key())
+    v1 = cu.decrypt(esecret, m_pwd, parameters.get_salt_key())
+    esecret2 = cu.encrypt(secret, m_pwd, parameters.get_salt_key())
+    v2 = cu.decrypt(esecret2, m_pwd, parameters.get_salt_key())
     assert v1 == v2
     assert v1 == secret
     
@@ -78,9 +78,9 @@ def test_encrypt_decrypt_no_config():
     m_pwd = u"memorabile"
     secret = u"mamma"
     key = cu.encrypt_key(c_pwd)    
-    esecret = cu.encrypt(secret, m_pwd, salt=key)
-    v1 = cu.decrypt(esecret, m_pwd, salt=key)
-    esecret2 = cu.encrypt(secret, m_pwd, salt=key)
-    v2 = cu.decrypt(esecret2, m_pwd, salt=key)
+    esecret = cu.encrypt(secret, m_pwd, key)
+    v1 = cu.decrypt(esecret, m_pwd, key)
+    esecret2 = cu.encrypt(secret, m_pwd, key)
+    v2 = cu.decrypt(esecret2, m_pwd, key)
     assert v1 == v2
     assert v1 == secret        

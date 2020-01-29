@@ -7,7 +7,7 @@ Created on 24 Dec 2019
 import boto3
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
-from secretwallet.constants import parameters, CONFIG_FILE
+from secretwallet.constants import parameters
 from secretwallet.utils.cryptutils import encrypt, decrypt
 
 def _get_table():
@@ -77,7 +77,7 @@ def create_table(table_name=parameters.get_table_name()):
         print(f"Table {table_name} has been created")
      
 
-def insert_secret(domain, access, uid, pwd, info, mem_pwd, conf_file = CONFIG_FILE, salt = None):
+def insert_secret(domain, access, uid, pwd, info, mem_pwd, salt = None):
     """Insert a secret access record in the cloud DB
     input:
     domain     the domain, i.e. logical context, of the secret
@@ -86,7 +86,6 @@ def insert_secret(domain, access, uid, pwd, info, mem_pwd, conf_file = CONFIG_FI
     pwd        the password for that access
     info       a map of informations (not encryted)
     mem_pwd    memorable password to encrypt the secret
-    conf_file  file containing the encrypted key
     salt       a string representation of the salt (optional)
     """
     timestamp = datetime.now().isoformat()
@@ -98,12 +97,12 @@ def insert_secret(domain, access, uid, pwd, info, mem_pwd, conf_file = CONFIG_FI
         info = {}
     _get_table().put_item(Item={'domain'    : domain,
                                 'access'    : access,
-                                'uid'       : encrypt(uid, mem_pwd, conf_file, salt),
-                                'pwd'       : encrypt(pwd, mem_pwd, conf_file, salt),
-                                'info'      : info,
+                                'uid'       : encrypt(uid, mem_pwd, salt),
+                                'pwd'       : encrypt(pwd, mem_pwd, salt),
+                                'info'      : encrypt_info(info, mem_pwd, salt),
                                 'timestamp' : timestamp})
     
-def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, conf_file = CONFIG_FILE, salt = None):
+def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt = None):
     """Update a secret access record in the cloud DB
     input:
     domain     the domain, i.e. logical context, of the secret
@@ -113,7 +112,6 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, conf_
     info_key   the key for an extra info
     info_value the value for an extra info
     mem_pwd    memorable password to encrypt the secret
-    conf_file  file containing the encrypted key
     salt       a string representation of the salt (optional)
     """
     timestamp = datetime.now().isoformat()
@@ -126,15 +124,15 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, conf_
     
     if uid is not None:
         expression_attributes.update({'#uid':'uid'})
-        expression_values.update({':uid' : encrypt(uid, mem_pwd, conf_file, salt)})
+        expression_values.update({':uid' : encrypt(uid, mem_pwd, salt)})
         update_expression += ' #uid = :uid,'
     if pwd is not None:
         expression_attributes.update({'#pwd':'pwd'})
-        expression_values.update({':pwd' : encrypt(pwd, mem_pwd, conf_file, salt)})
+        expression_values.update({':pwd' : encrypt(pwd, mem_pwd, salt)})
         update_expression += ' #pwd = :pwd,'
     if info_key is not None and info_value is not None:
         expression_attributes.update({'#info':'info','#key':info_key})
-        expression_values.update({':info':info_value})
+        expression_values.update({':info':encrypt(info_value, mem_pwd, salt).decode('latin1')})
         update_expression += ' #info.#key = :info,'
     #if nothing to update then return
     if update_expression == 'SET':
@@ -173,13 +171,12 @@ def delete_secret(domain, access):
     _get_table().delete_item(Key={'domain'  : domain,
                                   'access'  : access})
     
-def get_secret(domain, access, mem_pwd, conf_file = CONFIG_FILE, salt=None):
+def get_secret(domain, access, mem_pwd, salt=None):
     """Retrieves a secret by primary key
     input:
     domain     the domain, i.e. logical context, of the secret
     access     the secret sub-domain or access specification
     mem_pwd    memorable password to encrypt the secret
-    conf_file  file containing the encrypted key
     salt       a string representation of the salt (optional)
     output:
     returns the decrypted secret
@@ -190,8 +187,10 @@ def get_secret(domain, access, mem_pwd, conf_file = CONFIG_FILE, salt=None):
     #to convert to bytes, needs the .value attribute
     ret = resp['Item']
     if 'uid' in ret and ret['uid'] is not None and 'pwd' in ret and ret['pwd'] is not None:
-        ret['uid'] = decrypt(ret['uid'].value, mem_pwd, conf_file, salt)
-        ret['pwd'] = decrypt(ret['pwd'].value, mem_pwd, conf_file, salt)
+        ret['uid'] = decrypt(ret['uid'].value, mem_pwd, salt)
+        ret['pwd'] = decrypt(ret['pwd'].value, mem_pwd, salt)
+    if 'info' in ret and ret['info'] is not None:
+        ret['info'] = decrypt_info(ret['info'], mem_pwd, salt)
     return ret
     
 def list_secrets(domain):
@@ -213,3 +212,16 @@ def list_secrets(domain):
 def count_secrets():
     """Returns the total number of secretwallet"""
     return _get_table().scan(Select='COUNT')['Count']
+
+def encrypt_info(info,mem_pwd, salt):
+    einfo = {}
+    for key, value in info.items():
+        einfo[key] = encrypt(value, mem_pwd, salt).decode('latin1') #in string format
+    return einfo
+        
+def decrypt_info(info, mem_pwd, salt):
+    dinfo = {}
+    for key, value in info.items():
+        dinfo[key] = decrypt(value.encode('latin1'), mem_pwd, salt) #from string format
+    return dinfo 
+        
