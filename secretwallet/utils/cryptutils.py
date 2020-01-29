@@ -1,6 +1,6 @@
 import base64
 
-from secretwallet.constants import parameters, CONFIG_FILE 
+from secretwallet.constants import parameters 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
