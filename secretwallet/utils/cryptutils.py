@@ -46,7 +46,7 @@ def encrypt(secret, mem_pswd, salt = None):
     """
     if salt is None:        
         salt = parameters.get_salt_key() 
-    return _encrypt(secret, mem_pswd, salt)
+    return _encrypt(secret, mem_pswd, salt).decode('latin1')
 
 def _decrypt(secret, mem_pswd, salt):
     kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
@@ -70,4 +70,4 @@ def decrypt(secret, mem_pswd, salt = None):
     """
     if salt is None:
         salt = parameters.get_salt_key()
-    return _decrypt(secret, mem_pswd, salt)    
+    return _decrypt(secret.encode('latin1'), mem_pswd, salt)    

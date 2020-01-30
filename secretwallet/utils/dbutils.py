@@ -77,7 +77,7 @@ def create_table(table_name=parameters.get_table_name()):
         print(f"Table {table_name} has been created")
      
 
-def insert_secret(domain, access, uid, pwd, info, mem_pwd, salt = None):
+def insert_secret(domain, access, uid, pwd, info, mem_pwd, salt=None):
     """Insert a secret access record in the cloud DB
     input:
     domain     the domain, i.e. logical context, of the secret
@@ -88,6 +88,8 @@ def insert_secret(domain, access, uid, pwd, info, mem_pwd, salt = None):
     mem_pwd    memorable password to encrypt the secret
     salt       a string representation of the salt (optional)
     """
+    if salt is None:
+        salt = parameters.get_salt_key()
     timestamp = datetime.now().isoformat()
     if uid is None:
         uid = ""
@@ -102,7 +104,7 @@ def insert_secret(domain, access, uid, pwd, info, mem_pwd, salt = None):
                                 'info'      : encrypt_info(info, mem_pwd, salt),
                                 'timestamp' : timestamp})
     
-def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt = None):
+def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt=None):
     """Update a secret access record in the cloud DB
     input:
     domain     the domain, i.e. logical context, of the secret
@@ -114,6 +116,8 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt 
     mem_pwd    memorable password to encrypt the secret
     salt       a string representation of the salt (optional)
     """
+    if salt is None:
+        salt = parameters.get_salt_key()    
     timestamp = datetime.now().isoformat()
     expression_attributes = {'#domain':'domain',
                              '#access':'access'}
@@ -132,7 +136,7 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt 
         update_expression += ' #pwd = :pwd,'
     if info_key is not None and info_value is not None:
         expression_attributes.update({'#info':'info','#key':info_key})
-        expression_values.update({':info':encrypt(info_value, mem_pwd, salt).decode('latin1')})
+        expression_values.update({':info':encrypt(info_value, mem_pwd, salt)})
         update_expression += ' #info.#key = :info,'
     #if nothing to update then return
     if update_expression == 'SET':
@@ -181,14 +185,15 @@ def get_secret(domain, access, mem_pwd, salt=None):
     output:
     returns the decrypted secret
     """
+    if salt is None:
+        salt = parameters.get_salt_key()
+    
     resp = _get_table().get_item(Key={'domain'  :domain,
                                       'access'  : access})
-    #Beware the type of resp['Item']['uid'] is Binary (boto3 type)
-    #to convert to bytes, needs the .value attribute
     ret = resp['Item']
     if 'uid' in ret and ret['uid'] is not None and 'pwd' in ret and ret['pwd'] is not None:
-        ret['uid'] = decrypt(ret['uid'].value, mem_pwd, salt)
-        ret['pwd'] = decrypt(ret['pwd'].value, mem_pwd, salt)
+        ret['uid'] = decrypt(ret['uid'], mem_pwd, salt)
+        ret['pwd'] = decrypt(ret['pwd'], mem_pwd, salt)
     if 'info' in ret and ret['info'] is not None:
         ret['info'] = decrypt_info(ret['info'], mem_pwd, salt)
     return ret
@@ -216,12 +221,12 @@ def count_secrets():
 def encrypt_info(info,mem_pwd, salt):
     einfo = {}
     for key, value in info.items():
-        einfo[key] = encrypt(value, mem_pwd, salt).decode('latin1') #in string format
+        einfo[key] = encrypt(value, mem_pwd, salt) #in string format
     return einfo
         
 def decrypt_info(info, mem_pwd, salt):
     dinfo = {}
     for key, value in info.items():
-        dinfo[key] = decrypt(value.encode('latin1'), mem_pwd, salt) #from string format
+        dinfo[key] = decrypt(value, mem_pwd, salt) #from string format
     return dinfo 
         

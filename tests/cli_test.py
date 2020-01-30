@@ -25,9 +25,9 @@ def set_up():
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path,'data','test_integration.json')
     parameters.set_data(get_configuration(conf_file)) 
-    du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM, conf_file)
+    du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM)
     
-    p =Process(target=my_session, args =('memorable', 10, 5))
+    p =Process(target=my_session, args =('memorable', 30, 10))
     p.start()
        
     yield
@@ -88,3 +88,16 @@ def test_get_secret(set_up):
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert ACCESS in buf.getvalue()
+        
+@pytest.mark.integration        
+def test_update_info(set_up):
+    sleep(1)
+    sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
+    Parser()
+    sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','second_key','-iv','second_value']
+    Parser()
+    res = du.get_secret(DOMAIN, ACCESS, 'memorable', parameters.get_salt_key())
+    assert 3 == len(res['info'])
+    assert 'value' == res['info']['key']
+    assert 'first_value' == res['info']['first_key']
+    assert 'second_value' == res['info']['second_key']

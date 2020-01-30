@@ -51,7 +51,8 @@ def test_insert_select_compare_login(set_up):
         assert secret_pwd == res['pwd']
     finally:
         du.delete_secret(domain, access)
-        
+
+@pytest.mark.integration        
 def test_insert_select_compare_info(set_up):
     conf_file = set_up
     c_pwd = u"passwd"
@@ -68,6 +69,7 @@ def test_insert_select_compare_info(set_up):
     finally:
         du.delete_secret(domain, access)        
 
+@pytest.mark.integration
 def test_insert_select_compare_login_no_conf():
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
@@ -83,7 +85,8 @@ def test_insert_select_compare_login_no_conf():
         assert secret_pwd == res['pwd']
     finally:
         du.delete_secret(domain, access)        
-        
+
+@pytest.mark.integration        
 def test_has_secret():
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
@@ -97,7 +100,8 @@ def test_has_secret():
         assert du.has_secret(domain, access)
     finally:
         du.delete_secret(domain, access)
-        
+
+@pytest.mark.integration        
 def test_has_not_secret():
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
@@ -111,7 +115,8 @@ def test_has_not_secret():
         assert not du.has_secret('new_domain', access)
     finally:
         du.delete_secret(domain, access)
-        
+
+@pytest.mark.integration        
 def test_update_secret_login():
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
@@ -137,7 +142,8 @@ def test_update_secret_login():
         assert old_ts <  res['timestamp']            
     finally:
         du.delete_secret(domain, access)
-        
+
+@pytest.mark.integration        
 def test_update_secret_info_change_value():
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
@@ -161,6 +167,7 @@ def test_update_secret_info_change_value():
     finally:
         du.delete_secret(domain, access)
         
+@pytest.mark.integration        
 def test_update_secret_info_insert_value():
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
@@ -186,6 +193,7 @@ def test_update_secret_info_insert_value():
     finally:
         du.delete_secret(domain, access)
         
+@pytest.mark.integration        
 def test_update_secret_info_change_password_and_a_value():
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
@@ -214,6 +222,7 @@ def test_update_secret_info_change_password_and_a_value():
     finally:
         du.delete_secret(domain, access)
         
+@pytest.mark.integration        
 def test_update_missing_secret_no_effect():
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
@@ -243,6 +252,7 @@ def test_update_missing_secret_no_effect():
     finally:
         du.delete_secret(domain, access)
         
+@pytest.mark.integration        
 def test_has_table():
     assert True  == du.has_table(parameters.get_table_name())
     assert False == du.has_table('new_table')

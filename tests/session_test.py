@@ -4,7 +4,6 @@ from secretwallet.session.client import get_session_password, set_session_passwo
 from multiprocessing import Process
 from time import sleep
 
-
 @pytest.fixture
 def set_up():
     lifetime = 10
