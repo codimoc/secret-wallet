@@ -88,6 +88,9 @@ class Parameters(object):
             return self.__data['key']
         else:
             raise RuntimeError('The encrypted key for the salt was not found')
+        
+    def set_salt_key(self, key):
+        self.__data['key'] = key
     
     def get_session_timeout(self):
         if 'session_timeout' in self.__data:

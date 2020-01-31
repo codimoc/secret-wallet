@@ -9,6 +9,7 @@ from secretwallet.main.myparser import Parser
 from secretwallet.session.service import my_session
 from secretwallet.session.client import is_connected, stop_service
 import secretwallet.utils.dbutils as du
+import secretwallet.utils.cryptutils as cu
 from multiprocessing import Process
 from time import sleep
 
@@ -101,3 +102,35 @@ def test_update_info(set_up):
     assert 'value' == res['info']['key']
     assert 'first_value' == res['info']['first_key']
     assert 'second_value' == res['info']['second_key']
+    
+def test_wrong_salt(set_up):
+    my_access = 'another'
+    other_key = cu.encrypt_key('azzo')
+    sleep(1)
+    #insert
+    sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', my_access, '-u','login','-p','password']
+    Parser()
+    parameters.set_salt_key(other_key) #change the salt
+    #the following shoud produce and InvalidToken error
+    sys.argv=['secret_wallet','get','-d',DOMAIN, '-a', my_access]
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert 'InvalidToken' in buf.getvalue()
+
+def test_wrong_memorable_password(set_up):
+    my_access = 'another'
+    sleep(1)
+    try:
+        #insert
+        sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', my_access, '-u','login','-p','password']
+        Parser()
+        #now change the memorable in the session
+        sys.argv=['secret_wallet','client','-a','set','-v','azzo'] 
+        Parser()
+        #the following shoud produce and InvalidToken error
+        sys.argv=['secret_wallet','get','-d',DOMAIN, '-a', my_access]
+        with io.StringIO() as buf, redirect_stdout(buf):
+            Parser()
+            assert 'InvalidToken' in buf.getvalue()
+    finally:
+        du.delete_secret(DOMAIN,my_access)
