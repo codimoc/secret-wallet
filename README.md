@@ -1,5 +1,5 @@
 Like many wallet applications, this Python-based utility addresses the requirement of having a single point of access for the large amount
-of sensitive information that our social-media presence produces.
+of sensitive information that our social-media presence requires.
 
 If simple and memorable passwords are bad, recycling the same password over and over is evil: with one access compromised, all our secrets and sensitive information are potentially exposed.
 
@@ -13,7 +13,15 @@ And if the secret wallet travels with us, it is constantly at risk of being comp
 Keeping these secrets on an electronic wallet instead, on a PC, a tablet or a phone, is as safe as the device these secrets are stored on.
 Data can be encrypted on a hard drive, but the disk can fail, the phone can be stolen, the tablet forgotten on a plane... And so on.
 
-## Motivations
+## Index
+*  [motivations](#motivations)
+*  [description](#description)
+*  [concepts](#concepts)
+*  [requirements](#requirements)
+*  [installation](#installation)
+*  [configuration](#configuration)
+
+## <a id="motivations"></a>Motivations
 
 Fundamentally there are two conflicting requirements: ease of access for the data-owner and protection from unwanted access.
 Let's consider these in detail:
@@ -22,7 +30,7 @@ Let's consider these in detail:
     * There should be a single copy of the stored data,
     * The data should be accessible from different devices, of different type. 
     * Data retrieval should be _user-friendly_ and fast,
-    * Data retrieved should be in a format that can be cut & pasted into a login form accessed from the same device. 
+    * Data retrieved should be in a format that can be cut & pasted into a login form from the same device. 
 * **security**:
     * Sensitive data, stored remotely on a server or on the cloud, should be encrypted,
     * There should be no risk of _man in the middle_, _i.e._ data should be transmitted in encrypted format,
@@ -35,7 +43,7 @@ Let's consider these in detail:
     * There should be a third layer of protection on the remote store. 
 
 
-## The secret wallet, by codimoc, and security considerations
+## <a id="description"></a> The secret wallet, by codimoc, and security considerations
 
 This Python application strives to fulfil these requirements and motivations by:
 * Using AWS DynamoDB as the remote store, and relying on the security layer of the Amazon cloud as the third layer of protection, 
@@ -51,7 +59,7 @@ the secrets.
 On the other hand, if a device is lost or stolen, the memorable password is still required to access the secrets. The AWS security layer does not help in this case, 
 with the AWS secure credentials helpfully located on the compromised device's file system.
 
-## Concepts
+## <a id="concepts"></a>Concepts
 The basic unit of information stored on the remote DB is a **secret**. 
 Each secret is identified by a pair of keys, domain and access:
 *   **domain**: the principal context of that secret, _e.g_ the name of a service provider for which we need to store some access credentials,
@@ -59,25 +67,57 @@ Each secret is identified by a pair of keys, domain and access:
    
 Each secret contains three nullable items of data:
 *   **uid**: the user id, or the login credential for that secret. This is stored as an encrypted value,
-*   **pwd**: the password required to login in the account with the given user id, _e.g._ the UID and pwd of an online shopping account. 
-This data is also stored as an encrypted value,
-*   **info**: a map of extra information regarding this secret. This meta-data is open-ended, in the sense that anything can go into this dictionary, and it is stored as a json dictionary. For example, if the secret refers to a shopping account, this meta-data could be as follows:
+*   **pwd**: the password required to login in the account with the given user id, _e.g._ the user id and passoword for an online shopping account. 
+This passoword-data is also stored encrypted at the source (from tthe local client),
+*   **info**: a map of extra information regarding this secret. This meta-data is open-ended, in the sense that anything can go into this dictionary, and it is stored as a json dictionary, with keys unencrypted and values encrypted. For example, if the secret refers to a shopping account, this meta-data could be as follows:
 
-```
+```json
     {'telephone' : 1234,
      'delivery-agent' : 'Fast delivery Limited'}
  ```
- This data is currently stored without the first two layers of encryption and relies only on the AWS security layer. It might be encrypted in
- future releases.
+ 
+## <a id="requirements"></a>Dependencies and requirements
+The **secret wallet** uses the AWS cloud to store the secret information, in particular it relies on the *no-SQL* service AWS *DynomDB*. This is a database with tables that can be defined simply by the declaration of one or two primary keys. The remaining part of the schema can change and grow and it is data driven, *i.e.* it depends on the format of the records we want to store. The advantage of this storage solution are:
+*   It is a remote storage widely available on the Amazon cloud.
+*   It is simple to use and create new tables,
+*   And mainly it is available in the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) package that Amazon offers as an entry point into their echo-system.
 
-## Dependencies and requirements 
+In order to use the **secret wallet** it is therefore required to use or create a new Amazon AWS account. This can be done quickly and easily from the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) page. Once the account has been created, the three pieces of information required in order to use this app are:
+*   **aws_access_key_id**: to identify the account
+*   **aws_secret_access_key**: which can be generated after logging into the account; this key can be regenerated several times
+*   **region**: the physical location of the server, possibly close to the location of usage.
+
+These three pieces of information should be noted down when creating the account or copied into the clipboard or on a file. They will be required later, when [configuring](#configuration) the **secret wallet**.
+
+It should be noted that the initial AWS keys, produced when creating the new account, are root credentials for that account. It is safer, once logged into this new AWS account, to create some IAM roles with limited access, for example a programmatic user, and to use these credentials instead. Instruction on how to do this can be found [here](https://aws.amazon.com/iam/).
+
+## <a id="installation"></a>Installation
+The **secret wallet** is installed in the usual manner, as any other python package, and requires a minimum python version of 3.6.
+The installation is done with:
+
+```python
+pip install secret-wallet-codimoc 
+```
+This will first install all the dependencies from other python packages and will produce two new executable scripts:
+*   **secret_wallet** for the command line management of the secret wallet and
+*   **secret_wallet_conf** for the first time configuration as described below
+
+## <a id="configuration"></a>First time configuration
   
-## Syntax
+## <a id="passwords"></a>Password strength
+ 
+## <a id="syntax"></a>Syntax
 
-## Usage
+## <a id="usage"></a>Usage
 
-## First time configuration
+## <a id="session"></a>The secret-wallet session
 
-## Reconfiguration
+## <a id="customisation"></a>Manual customisation of parameters
 
-## Help needed
+## <a id="reconfiguration"></a>Reconfiguration
+
+## <a id="work"></a>Work in progress
+
+## <a id="help"></a>Help needed
+
+## <a id="faq"></a>FAQ
