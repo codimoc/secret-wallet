@@ -1,3 +1,5 @@
+## Introduction
+
 Like many wallet applications, this Python-based utility addresses the requirement of having a single point of access for the large amount
 of sensitive information that our social-media presence requires.
 
@@ -71,7 +73,7 @@ Each secret contains three nullable items of data:
 This passoword-data is also stored encrypted at the source (from tthe local client),
 *   **info**: a map of extra information regarding this secret. This meta-data is open-ended, in the sense that anything can go into this dictionary, and it is stored as a json dictionary, with keys unencrypted and values encrypted. For example, if the secret refers to a shopping account, this meta-data could be as follows:
 
-```json
+```
     {'telephone' : 1234,
      'delivery-agent' : 'Fast delivery Limited'}
  ```
