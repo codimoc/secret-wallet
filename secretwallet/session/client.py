@@ -14,16 +14,16 @@ def set_session_password(pwd):
     conn.send({'action':'set','password':pwd})
     r = conn.recv()
     conn.close()
-    #TODO: add logging
-    print(r)
+    #TODO: replace with logging
+    print(r['status'])
 
 def stop_service():
     conn = Client(parameters.get_session_address(), authkey=parameters.get_session_connection_password())        
     conn.send({'action':'stop','password':None})
     r = conn.recv()
     conn.close()
-    #TODO: add logging
-    print(r)
+    #TODO: replace with logging
+    print(r['status'])
     
 def is_connected():
     try:

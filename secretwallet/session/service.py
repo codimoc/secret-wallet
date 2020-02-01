@@ -11,6 +11,7 @@ def session_listener(seed, timeout):
     input: seed    the initial value stored in the session
            timeout the validity period of the session value (in seconds 
     """
+    #TODO: replace with logging
     print("Listener starts")
     serv = Listener(parameters.get_session_address(), authkey=parameters.get_session_connection_password())
     serv.password = seed
@@ -35,23 +36,26 @@ def session_listener(seed, timeout):
                     serv.password =  None
                     conn.send({'status':'stale','password':None})
             elif 'action' in req and req['action'] == 'stop':
-                #TODO: add logging
+                #TODO: replace with logging
                 print("Goodbye from listener")
                 conn.send({'status':'terminated','password':None})
                 break
             else:
                 conn.send({'status':'bad command','password':None})
+    #TODO: replace with logging
     print("Listener ends")
             
 
 def session_sweeper(lifetime):
     "The process that will kill the session daemon eventually"
+    #TODO: replace with logging
     print("sweeper starts")
     sleep(lifetime)
     conn = Client(parameters.get_session_address(), authkey=parameters.get_session_connection_password())    
     conn.send({'action':'stop','password':None})
-    #TODO: add logging
-    print(conn.recv())
+    ret = conn.recv()
+    #TODO: replace with logging
+    print(ret['status'])
     print("sweeper ends")
             
 def my_session(value, lifetime, timeout):

@@ -75,6 +75,7 @@ secretwallet <command> -h
                             '--info_value',
                             help='The value in an information map')                       
         args = parser.parse_args(sys.argv[2:])
+        #TODO: replace with logging
         print('Running set with arguments %s' % args)
         if args.info_key is None or args.info_value is None:
             info = None
@@ -89,6 +90,7 @@ secretwallet <command> -h
             if need_session:
                 start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
         except Exception as e:
+            #TODO: log error instead
             print(repr(e))
         
     def get(self):
@@ -106,13 +108,15 @@ secretwallet <command> -h
                         required=True,
                         help='The sub=domain (sub-category or access) of the secret')
         args = parser.parse_args(sys.argv[2:])
+        #TODO: replace with logging
         print('Running get with arguments %s' % args)
         try:
             memorable, need_session = pm.get_memorable_password(False)
-            print(get_secret(args.domain, args.access, memorable))
+            display_secret(get_secret(args.domain, args.access, memorable))
             if need_session:
                 start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())            
         except Exception as e:
+            #TODO: log error
             print(repr(e))
             
     def delete(self):
@@ -129,10 +133,12 @@ secretwallet <command> -h
                         required=True,
                         help='The sub=domain (sub-category or access) of the secret')
         args = parser.parse_args(sys.argv[2:])
+        #TODO: replace with logging
         print('Running delete with arguments %s' % args)
         try:
             delete_secret(args.domain, args.access)
         except Exception as e:
+            #TODO: log error
             print(repr(e))            
 
     def list(self):
@@ -144,6 +150,7 @@ secretwallet <command> -h
                             '--domain',
                             help='The domain (category) of the secretwallet. If not given all secretwallet are returned')
         args = parser.parse_args(sys.argv[2:])
+        #TODO: replace with logging
         print('Running list with arguments %s' % args)
         try:
             secrets = list_secrets(args.domain)
@@ -151,6 +158,7 @@ secretwallet <command> -h
             for s in secrets:
                 print("%-20s:%s"%s)
         except Exception as e:
+            #TODO: log error
             print(repr(e))                    
         
     def help(self):
@@ -178,10 +186,12 @@ secretwallet <command> -h
                             help='The value to store in the session',
                             default='not set')                
         args = parser.parse_args(sys.argv[2:])
+        #TODO: replace with logging
         print('Starting a secret wallet session with parameters %s'%args)
         try:
             start_my_session(args.value, args.lifetime, args.timeout)
         except Exception as e:
+            #TODO: log error instead
             print(repr(e))
             
             
@@ -200,6 +210,7 @@ secretwallet <command> -h
                             help='The value to store in the session',
                             default='not set')                
         args = parser.parse_args(sys.argv[2:])
+        #TODO: replace with logging
         print('Starting a secret wallet client with parameters %s'%args)
         try:
             if args.action == 'get':
@@ -214,7 +225,21 @@ secretwallet <command> -h
                 else:
                     print('not connected')                
         except Exception as e:
+            #TODO: log error instead
             print(repr(e))                           
             
             
-            
+def display_secret(secret):
+    "Print a secret in a fixed format"
+    print("**********************************************************")
+    print("Secret id:")
+    print(f"domain              : {secret['domain']}")
+    print(f"access              : {secret['access']}")
+    print("\nSecret credentials:")
+    print(f"login               : {secret['uid']}")
+    print(f"password            : {secret['pwd']}")
+    if 'info' in secret: 
+        print("\nSecret extra info:")
+        for k,v in secret['info'].items():
+            print(f"{k:20}: {v}")
+    print("**********************************************************")   
