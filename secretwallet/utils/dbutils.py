@@ -5,6 +5,7 @@ Created on 24 Dec 2019
 '''
 
 import boto3
+import sys
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
 from secretwallet.constants import parameters
@@ -25,10 +26,16 @@ def _drop_table(table_name):
 def has_table(table_name):
     "Checks if the table exists"
     #TODO: manage Session in a better way. The table resource should be stored in the Session
-    session = boto3.session.Session(profile_name=parameters.get_profile_name())
-    dynamodb = session.resource('dynamodb')
-    names = [x.table_name for x in dynamodb.tables.all()]
-    return table_name in names
+    try:
+        session = boto3.session.Session(profile_name=parameters.get_profile_name())
+        dynamodb = session.resource('dynamodb')
+        names = [x.table_name for x in dynamodb.tables.all()]
+        return table_name in names
+    except Exception as e:
+        print(e)
+        #TODO: Log exception
+        sys.exit(1)
+        
 
 def create_table(table_name=parameters.get_table_name()):
     "Creates a table if it does not exist"

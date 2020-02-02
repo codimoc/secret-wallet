@@ -1,5 +1,4 @@
 ## Introduction
-
 Like many wallet applications, this Python-based utility addresses the requirement of having a single point of access for the large amount
 of sensitive information that our social-media presence requires.
 
@@ -13,7 +12,7 @@ but this is not very helpful when trying to remember the login credentials of a 
 And if the secret wallet travels with us, it is constantly at risk of being compromised or lost. And with it, all the secrets it contains.
 
 Keeping these secrets on an electronic wallet instead, on a PC, a tablet or a phone, is as safe as the device these secrets are stored on.
-Data can be encrypted on a hard drive, but the disk can fail, the phone can be stolen, the tablet forgotten on a plane... And so on.
+Data can be encrypted on a hard drive, but the disk can fail, the phone can be stolen, the tablet forgotten on a plane...
 
 ## Index
 *  [motivations](#motivations)
@@ -21,7 +20,9 @@ Data can be encrypted on a hard drive, but the disk can fail, the phone can be s
 *  [concepts](#concepts)
 *  [requirements](#requirements)
 *  [installation](#installation)
-*  [configuration](#configuration)
+*  [first time configuration](#configuration)
+*  [password strength](#passwords)
+*  [syntax](#syntax)
 
 ## <a id="motivations"></a>Motivations
 
@@ -51,7 +52,7 @@ This Python application strives to fulfil these requirements and motivations by:
 * Using AWS DynamoDB as the remote store, and relying on the security layer of the Amazon cloud as the third layer of protection, 
 * using the Python **cryptography** package for local encryption (on device),
 * using the AWS **boto3** package to interact with the remote store
-* securing both devices and secrets with independent passwords (the first two layers of protection),
+* securing both devices and secrets with independent and strong passwords (**password_strength** package): these are the first two layers of protection,
 * providing console-based interaction with the secret wallet (for the time being)
 
 Having secured the allowed devices with a configuration password provides safety against misuses of the store once the memorable password is
@@ -73,16 +74,16 @@ Each secret contains three nullable items of data:
 This passoword-data is also stored encrypted at the source (from tthe local client),
 *   **info**: a map of extra information regarding this secret. This meta-data is open-ended, in the sense that anything can go into this dictionary, and it is stored as a json dictionary, with keys unencrypted and values encrypted. For example, if the secret refers to a shopping account, this meta-data could be as follows:
 
-```
+
     {'telephone' : 1234,
      'delivery-agent' : 'Fast delivery Limited'}
- ```
+
  
 ## <a id="requirements"></a>Dependencies and requirements
-The **secret wallet** uses the AWS cloud to store the secret information, in particular it relies on the *no-SQL* service AWS *DynomDB*. This is a database with tables that can be defined simply by the declaration of one or two primary keys. The remaining part of the schema can change and grow and it is data driven, *i.e.* it depends on the format of the records we want to store. The advantage of this storage solution are:
+The **secret wallet** uses the AWS cloud to store the secret information, in particular it relies on the *no-SQL* service AWS *DynamoDB*. This is a database with tables that can be defined simply by the declaration of one or two primary keys. The remaining part of the schema can change and grow and it is data driven, *i.e.* it depends on the format of the records we want to store. The advantage of this storage solution are:
 *   It is a remote storage widely available on the Amazon cloud.
 *   It is simple to use and create new tables,
-*   And mainly it is available in the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) package that Amazon offers as an entry point into their echo-system.
+*   And mainly, it is available in the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) package that Amazon offers as an entry point into their echo-system.
 
 In order to use the **secret wallet** it is therefore required to use or create a new Amazon AWS account. This can be done quickly and easily from the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) page. Once the account has been created, the three pieces of information required in order to use this app are:
 *   **aws_access_key_id**: to identify the account
@@ -97,18 +98,64 @@ It should be noted that the initial AWS keys, produced when creating the new acc
 The **secret wallet** is installed in the usual manner, as any other python package, and requires a minimum python version of 3.6.
 The installation is done with:
 
-```python
-pip install secret-wallet-codimoc 
-```
+    pip install secret-wallet-codimoc 
+
 This will first install all the dependencies from other python packages and will produce two new executable scripts:
 *   **secret_wallet** for the command line management of the secret wallet and
 *   **secret_wallet_conf** for the first time configuration as described below
 
 ## <a id="configuration"></a>First time configuration
-  
+Configuring the **secret wallet** is required in order to save both the AWS credentials for the Amazon cloud and the device's configuration key, which is the first layer of security to protect your secrets. This configuration creates also the DynamoDB table used to store the secrets on the remote server.
+
+This *first time configuration* is performed by running the **secret_wallet_conf** script from the command line. This script is interactive, in the old way of *questions and answers*, and provides some defaults value when possible. 
+It is divided into two separate steps, each of which can be skipped. Skipping a section allows to avoid overwriting credentials if the system was partially configured, and a partial change of configuration is desired. 
+
+These steps are:
+*   Storing the **AWS credentials**: this step results in creating or modifying the *credentials* file in the *.aws*  directory, located in the user home directory. This file is typically divided into separate sections. This allows to persist  different connections to different services on the Amazon cloud. The section relevant to the **secret-wallet** is market with the heading [secret-wallet].
+*   Storing the **secret wallet configuration**: this step persists the information in the *secretwallet.json* file in the *.secretwallet* directory, located in the user home directory. This configuration file is used to store the device encryption key, the name of the AWS connection profile and the table name where the secrets are stored. This file is also used to store customisation parameters as is described in [this section](#customisation).  
+
+When running the configuration script and a question is asked, type the first letter of the answer (e.g. *s* for *skip*) to select that choice. Whenever a default value is suggested, hitting the *Return* button will confirm that choice.  
+
 ## <a id="passwords"></a>Password strength
- 
+Strong passwords are required by this application and whenever a new password is needed, two verifications are performed:
+*   that the password is strong
+*   that the passoword is verified by re-entering it a second time.
+
+A chosen password is considered to be strong under the following requirements:
+*   At least eight characters long
+*   Should contain  at least one upper-case character
+*   Should contain  at least one number
+*   Should contain  at least one special character (!,~,^,@...)
+
+Only two different passwords are ever required: the configuration password to produce the device's encrypted key and the memorable password.
+
+The first password for the **device encryption key** will be used only when configuring the device, but must be remembered when configuring another device to access the remote secret wallet. Different configuration keys will result in an **InalidToken** error when retrieving secrets saved by a different device.
+  
+The **memorable password** is used whenever saving or retrieving secrets. This password should always be the same and can only be changed by performing a full [reconfiguration process](reconfiguration). To prevent retyping this password many times over, a session is opened and run in the background to remember this pasword for a short period of time. This will be discussed in [this section](#session). 
+
 ## <a id="syntax"></a>Syntax
+The syntax of the **secret_wallet** script is:
+
+    secret_wallet <command> [options]
+
+
+where the options are different for different commands. To get a list of available commands simply type:
+
+
+    secret_wallet help
+
+Please be aware that not that not all commands might be available in the first releases of this application.
+
+To find about the available options for a given command, just type:
+
+
+    secret_wallet <command> -h 
+
+
+For example the option for the *set* command can be displayed by:
+
+    secret_wallet set -h 
+
 
 ## <a id="usage"></a>Usage
 
