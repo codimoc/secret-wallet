@@ -23,6 +23,8 @@ Data can be encrypted on a hard drive, but the disk can fail, the phone can be s
 *  [first time configuration](#configuration)
 *  [password strength](#passwords)
 *  [syntax](#syntax)
+*  [usage](#usage)
+*  [the secret wallet session](#session)
 
 ## <a id="motivations"></a>Motivations
 
@@ -144,7 +146,7 @@ where the options are different for different commands. To get a list of availab
 
     secret_wallet help
 
-Please be aware that not that not all commands might be available in the first releases of this application.
+Please be aware that not all commands might be available in the first releases of this application.
 
 To find about the available options for a given command, just type:
 
@@ -152,14 +154,82 @@ To find about the available options for a given command, just type:
     secret_wallet <command> -h 
 
 
-For example the option for the *set* command can be displayed by:
+For example, the options for the *set* command can be displayed by:
 
-    secret_wallet set -h 
+    secret_wallet set -h
+    
+Please remember to enclose textual arguments with single or double quotes, when these arguments contain spaces or special characters, otherwise you might get some unexpected errors. 
 
 
 ## <a id="usage"></a>Usage
+As mentioned above, in the early releases the interaction with the secret wallet is limited to the command line interface. A typical user would add secrets, retrieve secrets and look at a list of secrets in the remote wallet. 
+
+Let's consider a realistic example: the energy provider *Smart Energy Ltd* provides both gas and electricty to our customer. It provides a single access through their web portal, to manage both the gas and electricity accounts. It requires a normal access via login and password, and gives customer's support through a telephone hot-line. In summary:
+
+| Field | Value |
+| ---- | ---- |
+| user id | joe@email.com |
+| password | xy67Gh!8 |
+| gas account | G15003798 |
+| electricity account | E15003799 |
+| hotline | 0800 123456 |
+
+Fundamentally, there is one login and one password to store and some extra info. We decide to use *energy* as the domain name  and *smart energy* as the access name.
+
+We start by inserting the user id and password:
+    
+    secret_wallet set -d energy -a 'smart energy' -u 'joe@email.com' -p 'xy67Gh!8'
+    
+Notice that we have wrapped some of the fields in single quotes. This is to ensure that the shell interpreter (bash in my case) does not misjudge some special characters in the password field or the space in the access field.
+
+If it all goes well, a memorable password is first asked and then verified, and the data is entered in the wallet. We can check that the secret is there by typing:
+
+    secret_wallet list
+    
+We then add the extra data bit by bit. In fact an update of the secret is performed instead of an insert, whenever the same domain and access values are passed:
+
+    secret_wallet set -d energy -a 'smart energy' -ik 'gas account' -iv G15003798
+    secret_wallet set -d energy -a 'smart energy' -ik 'electricity account' -iv E15003799
+    secret_wallet set -d energy -a 'smart energy' -ik 'hotline' -iv '0800 123456'
+    
+All done! We now want to look at the full secret:
+
+    secret_wallet get -d energy -a 'smart energy'
+    
+returning:
+
+    **********************************************************
+    Secret id:
+    domain              : energy
+    access              : smart energy
+    
+    Secret credentials:
+    login               : joe@email.com
+    password            : xy67Gh!8
+    
+    Secret extra info:
+    electricity account : E15003799
+    gas account         : G15003798
+    hotline             : 0800 123456
+    
+    Last updated        : 2020-02-03T08:27:03.601671
+    **********************************************************
+
+It is important to check the integrity of the secret with the *get* command straight after insertion. This is to guarantee that all the secret data was stored with the same password. If any piece of information had a different password when stored, the retrieval would produce an **InvalidToken** error.
+
+If this happens, one should delete the record and start again. To delete the record simply use the *delete* command:
+
+    secret_wallet delete -d energy -a 'smart energy'
+    
+At this stage it is interesting to compared with what stored remotely. After loggin in with the AWS Management Console, and selecting the DynamoDB service, all items in the target table should be encrypted.
 
 ## <a id="session"></a>The secret-wallet session
+If you need to insert many secrets  manually, it is very tiring to type the memorable password twice for each insertion with the *set* command. For this reason two background processes are started when the first password is entered. 
+
+The first process keeps the memorable password alive for a short period of time, so that reiterated insertions or retrievals within this period don't require the re-insertion of the same password. The default **timeout** is of 60 seconds but can be customised manually as described in the [next section](#customisation). After the timeout period lapses, this process is kept alive but the password is forgotten until the next password request.
+
+The second process has a **lifetime** of 10 minutes, which is also manually customisable with a different value. This process' job is to kill the first process when the lifetime has expired. At the end, both processes are terminated, to be restarted at the next password request.
+
 
 ## <a id="customisation"></a>Manual customisation of parameters
 

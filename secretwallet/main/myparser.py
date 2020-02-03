@@ -242,4 +242,5 @@ def display_secret(secret):
         print("\nSecret extra info:")
         for k,v in secret['info'].items():
             print(f"{k:20}: {v}")
+    print(f"\nLast updated        : {secret['timestamp']}")
     print("**********************************************************")   
