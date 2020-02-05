@@ -25,6 +25,8 @@ Data can be encrypted on a hard drive, but the disk can fail, the phone can be s
 *  [syntax](#syntax)
 *  [usage](#usage)
 *  [the secret wallet session](#session)
+*  [manual customisation](#customization)
+*  [reconfiguration](#reconfiguration)
 
 ## <a id="motivations"></a>Motivations
 
@@ -232,8 +234,22 @@ The second process has a **lifetime** of 10 minutes, which is also manually cust
 
 
 ## <a id="customisation"></a>Manual customisation of parameters
+The current version does not have a command yet to reconfigure the default parameters of this application, like the session timeout and lifetime, and the policy for the password strength. This will come soon with the next releases. In the meantime, two of these parameters can be set manually by adding a couple of entries to the configuration file *<home>/.secretwallet/secretwallet.json*. For example, assuming that the current file looks like this:
 
+    {"key": "xyxyyxyxyxxyyxyxxyyy123",
+     "profile": "secret-wallet",
+     "table_name": "test"}
+   
+By expressing the timeout and lifetime in *seconds*, one could have 30s timeout and 2mins lifetime by adding these extra fields to the file:
+ 
+    {"key": "xyxyyxyxyxxyyxyxxyyy123",
+     "profile": "secret-wallet",
+      "table_name": "test",
+      "session_timeout": 30,
+      "session_lifetime" : 120}
+    
 ## <a id="reconfiguration"></a>Reconfiguration
+This feature is not yet present in the current version. It is an important feature that will be added very soon. It refers to the need to re-encrypt all secrets if either the memorable password, the configuration password or both are changed. All secrets will need to be retrieved with the old values and encrypted with the new ones.
 
 ## <a id="work"></a>Work in progress
 
