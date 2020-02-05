@@ -27,6 +27,9 @@ Data can be encrypted on a hard drive, but the disk can fail, the phone can be s
 *  [the secret wallet session](#session)
 *  [manual customisation](#customization)
 *  [reconfiguration](#reconfiguration)
+*  [work in progress](#work)
+*  [help needed](#help)
+*  [FAQ](#faq)
 
 ## <a id="motivations"></a>Motivations
 
@@ -249,10 +252,23 @@ By expressing the timeout and lifetime in *seconds*, one could have 30s timeout 
       "session_lifetime" : 120}
     
 ## <a id="reconfiguration"></a>Reconfiguration
-This feature is not yet present in the current version. It is an important feature that will be added very soon. It refers to the need to re-encrypt all secrets if either the memorable password, the configuration password or both are changed. All secrets will need to be retrieved with the old values and encrypted with the new ones.
+This feature is not yet present in the current version. It is an important feature that will be added very soon. It refers to the need of re-encrypting all secrets if either the memorable password, the configuration password or both are changed. All secrets will need to be retrieved with the old values and encrypted with the new ones.
 
 ## <a id="work"></a>Work in progress
+Coming soon, in the next releases, there will be some feature improvements and fixes, like:
+*   customisation and parameter configuration via command line,
+*   reconfiguration process when all secrets need re-encryption because of change of passwords,
+*   adding new commands to the command line interface, like query capabilities,
+*   adding a logging layer,
+*   adding batch processing of secrets' insertion
+*   required bug fixes
+
+On a longer time scale:
+*   Adding a graphical user interface
 
 ## <a id="help"></a>Help needed
+This simple application has the potential of becoming a useful productivity tool, and will require lot's of work for new features and better user interaction. 
+Help is needed and welcome. Please visit the the [github page](https://github.com/codimoc/secret-wallet) and raise new issues, or contact the author via email from the email address you will find in the secret-wallet page on [pypi](https://pypi.org/).    
 
 ## <a id="faq"></a>FAQ
+A *frequently asked questions* will be maintained [here](https://github.com/codimoc/secret-wallet/wiki/FAQ). 
