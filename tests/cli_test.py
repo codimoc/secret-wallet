@@ -28,7 +28,7 @@ def set_up():
     parameters.set_data(get_configuration(conf_file)) 
     du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM)
     
-    p =Process(target=my_session, args =('memorable', 30, 10))
+    p =Process(target=my_session, args =('memorable', 60, 10))
     p.start()
        
     yield

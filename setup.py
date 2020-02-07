@@ -47,5 +47,7 @@ setuptools.setup(
             'secret_wallet_conf = secretwallet.main:configure'],
     },
     tests_require=['pytest'],
-    cmdclass = {'test': PyTest},    
+    cmdclass = {'test': PyTest}, 
+    package_data={"tests": ["data/*.json"],
+    }
 )
