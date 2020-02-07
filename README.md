@@ -4,15 +4,15 @@ of sensitive information that our social-media presence requires.
 
 If simple and memorable passwords are bad, recycling the same password over and over is evil: with one access compromised, all our secrets and sensitive information are potentially exposed.
 
-Producing and remembering a different complex password for each remote account is hard, and it can quickly become totally unmanageable when passwords need changing frequently.
+Producing and remembering a different complex password for each remote account is hard, and it can quickly become unmanageable when passwords need changing frequently.
 
 To store these secrets on paper is not very smart either: a notebook can be safely tucked away in a locked drawer, 
-but this is not very helpful when trying to remember the login credentials of a personal banking or private health insurance site, while on holiday abroad.
+but it is not very helpful when trying to remember the login credentials of a personal banking site or a private health insurance, while on holiday abroad.
 
 And if the secret wallet travels with us, it is constantly at risk of being compromised or lost. And with it, all the secrets it contains.
 
-Keeping these secrets on an electronic wallet instead, on a PC, a tablet or a phone, is as safe as the device these secrets are stored on.
-Data can be encrypted on a hard drive, but the disk can fail, the phone can be stolen, the tablet forgotten on a plane...
+Keeping these secrets on an electronic wallet instead, on a PC, a tablet or a phone, is as safe as the device where these secrets are stored on.
+Data can be encrypted on a hard drive, but the disk can fail, the phone can be stolen, the tablet forgotten on a plane.
 
 ## Index
 *  [motivations](#motivations)
@@ -33,37 +33,39 @@ Data can be encrypted on a hard drive, but the disk can fail, the phone can be s
 
 ## <a id="motivations"></a>Motivations
 
-Fundamentally there are two conflicting requirements: ease of access for the data-owner and protection from unwanted access.
+Fundamentally there are two conflicting requirements to keep in mind: ease of access for the data-owner and protection from unwanted access.
+
 Let's consider these in detail:
 * **accessibility**: 
     * The data should be available remotely, from any location. 
-    * There should be a single copy of the stored data,
+    * There should be a single copy of the stored data.
     * The data should be accessible from different devices, of different type. 
-    * Data retrieval should be _user-friendly_ and fast,
-    * Data retrieved should be in a format that can be cut & pasted into a login form from the same device. 
+    * Data retrieval should be _user-friendly_ and fast.
+    * Data retrieved should be in a format that can be easily cut & pasted into a login form from the same device. 
 * **security**:
-    * Sensitive data, stored remotely on a server or on the cloud, should be encrypted,
-    * There should be no risk of _man in the middle_, _i.e._ data should be transmitted in encrypted format,
-    * Data access should be protected by different and independent security tokens,
-    * Ideally encryption should happen locally, on trusted devices. Trusted devices can be configured
-    by using the same hash-key for encryption (the salt). The generation of this hash-key should be password protected, 
-    * The memorable password used as encryption key should be remembered by the owner and not stored,
-    * The password used to configure the trusted device should be different from the memorable password used
-    to encrypt the data,
+    * Sensitive data, stored remotely on a server or on the cloud, should be encrypted.
+    * There should be no risk of _man in the middle_, _i.e._ data should be transmitted in encrypted format.
+    * Data access should be protected by different and independent security tokens.
+    * Encryption should happen locally, on trusted devices. Trusted devices can be configured
+    by using the same hash-key for encryption (the salt). The generation of this hash-key should be password protected. 
+    * The memorable password used as the encryption key should be remembered by the owner and not stored.
+    * The password for configuring the trusted device should be different from the memorable password used
+    to encrypt the data.
     * There should be a third layer of protection on the remote store. 
 
 
 ## <a id="description"></a> The secret wallet, by codimoc, and security considerations
 
-This Python application strives to fulfil these requirements and motivations by:
-* Using AWS DynamoDB as the remote store, and relying on the security layer of the Amazon cloud as the third layer of protection, 
-* using the Python **cryptography** package for local encryption (on device),
-* using the AWS **boto3** package to interact with the remote store
-* securing both devices and secrets with independent and strong passwords (**password_strength** package): these are the first two layers of protection,
-* providing console-based interaction with the secret wallet (for the time being)
+This Python-based application strives to fulfil these requirements and motivations by:
 
-Having secured the allowed devices with a configuration password provides safety against misuses of the store once the memorable password is
-compromised by accident. For example, if this memorable password is confided to others or guessed, only pre-configured devices can access 
+*   Using the AWS DynamoDB as the remote store, and relying on the security layer of the Amazon cloud as the third layer of protection. 
+*   using the **cryptography** package for local encryption (on device).
+*   using the AWS **boto3** package to interact with the remote store.
+*   securing both devices and secrets with independent and strong passwords (**password_strength** package): these are the first two layers of protection.
+*   providing console-based interaction with the secret wallet (for the time being)
+
+Securing the allowed devices with a configuration password provides safety against misuses of the store, once the memorable password is
+compromised by accident. For example, if the memorable password is confided to others or guessed, only pre-configured devices can access 
 the secrets.
 
 On the other hand, if a device is lost or stolen, the memorable password is still required to access the secrets. The AWS security layer does not help in this case, 
@@ -71,15 +73,15 @@ with the AWS secure credentials helpfully located on the compromised device's fi
 
 ## <a id="concepts"></a>Concepts
 The basic unit of information stored on the remote DB is a **secret**. 
-Each secret is identified by a pair of keys, domain and access:
-*   **domain**: the principal context of that secret, _e.g_ the name of a service provider for which we need to store some access credentials,
-*   **access**: a sub-context of _domain_; for example if the main domain is a utility provider which provides both a gas and electricity accounts, we might have two secrets with the same domain but different accesses. This separation of domain and access facilitates queries to the DB, since we might want to know all accesses for a given domain, or all the available domains in the wallet.
+Each secret is identified by a pair of two keys, the domain key and the access key:
+*   **domain**: it is the principal context of that secret, _e.g_ the name of a service provider for which some access credentials are needed.
+*   **access**: it is a sub-context of the _domain_; for example if the main domain is a utility provider providing both a gas and electricity accounts, we might have two secrets with the same domain but different accesses. This separation of domain and access facilitates queries to the DB, since we might want to know all the accesses for a given domain, or all the available domains in the wallet.
    
 Each secret contains three nullable items of data:
 *   **uid**: the user id, or the login credential for that secret. This is stored as an encrypted value,
-*   **pwd**: the password required to login in the account with the given user id, _e.g._ the user id and passoword for an online shopping account. 
-This passoword-data is also stored encrypted at the source (from tthe local client),
-*   **info**: a map of extra information regarding this secret. This meta-data is open-ended, in the sense that anything can go into this dictionary, and it is stored as a json dictionary, with keys unencrypted and values encrypted. For example, if the secret refers to a shopping account, this meta-data could be as follows:
+*   **pwd**: the password required to login in the account with the given user id, for example the user id and password for an online shopping account. 
+This password-data is also stored encrypted at the source (from the local client),
+*   **info**: a map of extra information regarding this secret. This meta-data is open-ended, in the sense that anything can go into this dictionary, and it is stored as a json dictionary, with keys not encrypted and values encrypted. For example, if the secret refers to a shopping account, the map could be as follows:
 
 
     {'telephone' : 1234,
@@ -87,46 +89,46 @@ This passoword-data is also stored encrypted at the source (from tthe local clie
 
  
 ## <a id="requirements"></a>Dependencies and requirements
-The **secret wallet** uses the AWS cloud to store the secret information, in particular it relies on the *no-SQL* service AWS *DynamoDB*. This is a database with tables that can be defined simply by the declaration of one or two primary keys. The remaining part of the schema can change and grow and it is data driven, *i.e.* it depends on the format of the records we want to store. The advantage of this storage solution are:
+The **secret wallet** uses the AWS cloud to store the secret information; in particular it relies on the *no-SQL* service, known as AWS *DynamoDB*. This is a database with tables that can be defined by the declaration of one or two primary keys. The remaining part of the schema can change and grow based on the data inserted, depending on the format of the records we want to store. The advantage of this storage solution are:
 *   It is a remote storage widely available on the Amazon cloud.
-*   It is simple to use and create new tables,
-*   And mainly, it is available in the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) package that Amazon offers as an entry point into their echo-system.
+*   It is easy to use and create new tables,
+*   It is available in the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) package that Amazon offers as an entry point into their echo-system.
 
-In order to use the **secret wallet** it is therefore required to use or create a new Amazon AWS account. This can be done quickly and easily from the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) page. Once the account has been created, the three pieces of information required in order to use this app are:
-*   **aws_access_key_id**: to identify the account
-*   **aws_secret_access_key**: which can be generated after logging into the account; this key can be regenerated several times
-*   **region**: the physical location of the server, possibly close to the location of usage.
+In order to use the **secret wallet** it is necessary to use an Amazon AWS account,  or create a new one. This can be done quickly and easily from the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) page. Once the account has been created, three pieces of information are required for the **secret wallet**:
+*   the **aws_access_key_id**: to identify the account
+*   the **aws_secret_access_key**: which can be created after logging into the account; this key can be regenerated several times.
+*   the **region**: the physical location of the server, possibly close to the location of usage.
 
-These three pieces of information should be noted down when creating the account or copied into the clipboard or on a file. They will be required later, when [configuring](#configuration) the **secret wallet**.
+These three records should be noted down when creating the account or copied onto the clipboard or on a file. They will be needed later, when [configuring](#configuration) the **secret wallet**.
 
-It should be noted that the initial AWS keys, produced when creating the new account, are root credentials for that account. It is safer, once logged into this new AWS account, to create some IAM roles with limited access, for example a programmatic user, and to use these credentials instead. Instruction on how to do this can be found [here](https://aws.amazon.com/iam/).
+It should be noted that the initial AWS keys, produced on creation of the new account, are root credentials for that account. It is safer, once logged into this new AWS account, to generate a different IAM role with limited access, for example a programmatic user, and to use the relative credentials instead. Instruction on how to do this can be found [here](https://aws.amazon.com/iam/).
 
 ## <a id="installation"></a>Installation
-The **secret wallet** is installed in the usual manner, as any other python package, and requires a minimum python version of 3.6.
+The **secret wallet** is installed in the usual manner, as any other python packages, and requires a minimum Python version of 3.6.
 The installation is done with:
 
     pip install secret-wallet-codimoc 
 
-This will first install all the dependencies from other python packages and will produce two new executable scripts:
+After installing all the dependencies from other python packages,  it produce twos new executable scripts:
 *   **secret_wallet** for the command line management of the secret wallet and
 *   **secret_wallet_conf** for the first time configuration as described below
 
 ## <a id="configuration"></a>First time configuration
-Configuring the **secret wallet** is required in order to save both the AWS credentials for the Amazon cloud and the device's configuration key, which is the first layer of security to protect your secrets. This configuration creates also the DynamoDB table used to store the secrets on the remote server.
+Configuring the **secret wallet** is required in order to save both the AWS credentials for the Amazon cloud and the device's configuration key, which is the first layer of security to protect your secrets. This configuration also creates the DynamoDB table used to store the secrets.
 
-This *first time configuration* is performed by running the **secret_wallet_conf** script from the command line. This script is interactive, in the old way of *questions and answers*, and provides some defaults value when possible. 
-It is divided into two separate steps, each of which can be skipped. Skipping a section allows to avoid overwriting credentials if the system was partially configured, and a partial change of configuration is desired. 
+This *first time configuration* is performed by running the **secret_wallet_conf** script from the command line. This script is interactive, in the old way of *questions and answers*, and provides some default values when possible. 
+It is divided into two separate steps, each of which can be skipped. Skipping a step allows to avoid overwriting credentials, if the system was partially configured, and a partial change of configuration is desired. 
 
 These steps are:
-*   Storing the **AWS credentials**: this step results in creating or modifying the *credentials* file in the *.aws*  directory, located in the user home directory. This file is typically divided into separate sections. This allows to persist  different connections to different services on the Amazon cloud. The section relevant to the **secret-wallet** is market with the heading [secret-wallet].
-*   Storing the **secret wallet configuration**: this step persists the information in the *secretwallet.json* file in the *.secretwallet* directory, located in the user home directory. This configuration file is used to store the device encryption key, the name of the AWS connection profile and the table name where the secrets are stored. This file is also used to store customisation parameters as is described in [this section](#customisation).  
+*   Storing the **AWS credentials**: this results in creating or modifying the *credentials* file in the *.aws*  directory, located in the user home directory. This file is typically divided into separate sections. This allows to persist  different connections to different services on the Amazon cloud. The section relevant to the **secret-wallet** is market with the heading [secret-wallet].
+*   Storing the **secret wallet configuration**: this step persists the information in the *secretwallet.json* file in the *.secretwallet* directory, located in the user home directory. This configuration file is used to store the device encryption key, the name of the AWS connection profile and the table name where the secrets are stored. This file is also used to store customisation parameters as described in [this section](#customisation).  
 
-When running the configuration script and a question is asked, type the first letter of the answer (e.g. *s* for *skip*) to select that choice. Whenever a default value is suggested, hitting the *Return* button will confirm that choice.  
+When questions are asked during the configuration, please type the first letter of the answer (e.g. *s* for *skip*) to select that choice. Whenever a default value is suggested, simply hit the *Return* button to confirm that choice.  
 
 ## <a id="passwords"></a>Password strength
-Strong passwords are required by this application and whenever a new password is needed, two verifications are performed:
-*   that the password is strong
-*   that the passoword is verified by re-entering it a second time.
+Strong passwords are required by this application, Whenever a new password is needed, two verifications are performed:
+*   verify that the password is strong
+*   verify that the password is correctly typed, by re-entering it a second time.
 
 A chosen password is considered to be strong under the following requirements:
 *   At least eight characters long
@@ -136,9 +138,9 @@ A chosen password is considered to be strong under the following requirements:
 
 Only two different passwords are ever required: the configuration password to produce the device's encrypted key and the memorable password.
 
-The first password for the **device encryption key** will be used only when configuring the device, but must be remembered when configuring another device to access the remote secret wallet. Different configuration keys will result in an **InalidToken** error when retrieving secrets saved by a different device.
+The first password for the **device encryption key** will be used only when configuring the device, but must be remembered when configuring additional devices. Different configuration keys will result in an **InvalidToken** error when retrieving secrets saved by a different device.
   
-The **memorable password** is used whenever saving or retrieving secrets. This password should always be the same and can only be changed by performing a full [reconfiguration process](reconfiguration). To prevent retyping this password many times over, a session is opened and run in the background to remember this pasword for a short period of time. This will be discussed in [this section](#session). 
+The **memorable password** is used whenever saving or retrieving secrets. This password should always be the same, and can only be changed by performing a full [reconfiguration process](reconfiguration). To prevent retyping this password many times over, a session is opened and run in the background to remember the password for a short period of time. This will be discussed in [this section](#session). 
 
 ## <a id="syntax"></a>Syntax
 The syntax of the **secret_wallet** script is:
@@ -151,7 +153,7 @@ where the options are different for different commands. To get a list of availab
 
     secret_wallet help
 
-Please be aware that not all commands might be available in the first releases of this application.
+Please be aware that not all commands are be available in the first releases of this application.
 
 To find about the available options for a given command, just type:
 
@@ -163,13 +165,13 @@ For example, the options for the *set* command can be displayed by:
 
     secret_wallet set -h
     
-Please remember to enclose textual arguments with single or double quotes, when these arguments contain spaces or special characters, otherwise you might get some unexpected errors. 
+To avoid possible errors, please remember to enclose the textual arguments within single or double quotes, when these arguments contain spaces or special characters. 
 
 
 ## <a id="usage"></a>Usage
-As mentioned above, in the early releases the interaction with the secret wallet is limited to the command line interface. A typical user would add secrets, retrieve secrets and look at a list of secrets in the remote wallet. 
+As mentioned above, in the early releases the interaction with the secret wallet is limited to the command line interface. A typical user would add secrets, retrieve secrets and look at a list of secrets stored in the remote wallet. 
 
-Let's consider a realistic example: the energy provider *Smart Energy Ltd* provides both gas and electricty to our customer. It provides a single access through their web portal, to manage both the gas and electricity accounts. It requires a normal access via login and password, and gives customer's support through a telephone hot-line. In summary:
+Let's consider a realistic example: the energy provider *Smart Energy Ltd* provides both gas and electricity to our customer. It provides a single access through their web portal, to manage both the gas and electricity accounts. It requires a normal access with a login and password, and gives some customer's support through a telephone hot-line. In summary:
 
 | Field | Value |
 | ---- | ---- |
@@ -179,25 +181,25 @@ Let's consider a realistic example: the energy provider *Smart Energy Ltd* provi
 | electricity account | E15003799 |
 | hotline | 0800 123456 |
 
-Fundamentally, there is one login and one password to store and some extra info. We decide to use *energy* as the domain name  and *smart energy* as the access name.
+Fundamentally, one login and password to store and some extra information. We could to use *energy* as the domain name  and *smart energy* as the access name.
 
 We start by inserting the user id and password:
     
     secret_wallet set -d energy -a 'smart energy' -u 'joe@email.com' -p 'xy67Gh!8'
     
-Notice that we have wrapped some of the fields in single quotes. This is to ensure that the shell interpreter (bash in my case) does not misjudge some special characters in the password field or the space in the access field.
+Notice that we have wrapped some of the fields in single quotes. This to ensure that the shell interpreter (bash in my case) does not misinterpret some special characters in the password field or the space in the access field.
 
-If it all goes well, a memorable password is first asked and then verified, and the data is entered in the wallet. We can check that the secret is there by typing:
+A memorable password is first asked and then verified, and the data is entered in the wallet. We can check that the secret is there by typing:
 
     secret_wallet list
     
-We then add the extra data bit by bit. In fact an update of the secret is performed instead of an insert, whenever the same domain and access values are passed:
+We then add the extra information, bit by bit. In fact an update of the secret is performed instead of a new insertion, whenever the same domain and access values are used:
 
     secret_wallet set -d energy -a 'smart energy' -ik 'gas account' -iv G15003798
     secret_wallet set -d energy -a 'smart energy' -ik 'electricity account' -iv E15003799
     secret_wallet set -d energy -a 'smart energy' -ik 'hotline' -iv '0800 123456'
     
-All done! We now want to look at the full secret:
+All done! We can now look at the full secret stored:
 
     secret_wallet get -d energy -a 'smart energy'
     
@@ -220,24 +222,24 @@ returning:
     Last updated        : 2020-02-03T08:27:03.601671
     **********************************************************
 
-It is important to check the integrity of the secret with the *get* command straight after insertion. This is to guarantee that all the secret data was stored with the same password. If any piece of information had a different password when stored, the retrieval would produce an **InvalidToken** error.
+It is important to verify the integrity of the secret with the *get* command straight after insertion. This is to guarantee that all the secret data was stored with the same password. If any data had a different password when stored, the retrieval would produce an **InvalidToken** error.
 
-If this happens, one should delete the record and start again. To delete the record simply use the *delete* command:
+If this happens, we should delete the record and start again. To delete the record simply use the *delete* command:
 
     secret_wallet delete -d energy -a 'smart energy'
     
-At this stage it is interesting to compared with what stored remotely. After loggin in with the AWS Management Console, and selecting the DynamoDB service, all items in the target table should be encrypted.
+At this stage it is interesting to compare with what stored remotely. After logging in with the AWS Management Console, and selecting the DynamoDB service, all items in the target table should appear encrypted.
 
 ## <a id="session"></a>The secret-wallet session
-If you need to insert many secrets  manually, it is very tiring to type the memorable password twice for each insertion with the *set* command. For this reason two background processes are started when the first password is entered. 
+When many secrets  need to be inserted sequentially, it is very tiring to type the memorable password twice for each insertion with the *set* command. For this reason two background processes are started when the first password is entered. 
 
 The first process keeps the memorable password alive for a short period of time, so that reiterated insertions or retrievals within this period don't require the re-insertion of the same password. The default **timeout** is of 60 seconds but can be customised manually as described in the [next section](#customisation). After the timeout period lapses, this process is kept alive but the password is forgotten until the next password request.
 
-The second process has a **lifetime** of 10 minutes, which is also manually customisable with a different value. This process' job is to kill the first process when the lifetime has expired. At the end, both processes are terminated, to be restarted at the next password request.
+The second process has a **lifetime** of 10 minutes, which is also manually customisable with a different value. This process' task is to kill the first process when the lifetime has expired. At the end, both processes are terminated, only to be restarted at the next password request.
 
 
 ## <a id="customisation"></a>Manual customisation of parameters
-The current version does not have a command yet to reconfigure the default parameters of this application, like the session timeout and lifetime, and the policy for the password strength. This will come soon with the next releases. In the meantime, two of these parameters can be set manually by adding a couple of entries to the configuration file *<home>/.secretwallet/secretwallet.json*. For example, assuming that the current file looks like this:
+The current version of **secret wallet** does not have a command to reconfigure the default parameters, like the session timeout and lifetime, or the policy for the password strength. This will come in the next releases. In the meantime, two of these parameters can be set manually by adding a couple of entries in the configuration file *<home>/.secretwallet/secretwallet.json*. For example, assuming that the current file looks like this:
 
     {"key": "xyxyyxyxyxxyyxyxxyyy123",
      "profile": "secret-wallet",
@@ -252,7 +254,7 @@ By expressing the timeout and lifetime in *seconds*, one could have 30s timeout 
       "session_lifetime" : 120}
     
 ## <a id="reconfiguration"></a>Reconfiguration
-This feature is not yet present in the current version. It is an important feature that will be added very soon. It refers to the need of re-encrypting all secrets if either the memorable password, the configuration password or both are changed. All secrets will need to be retrieved with the old values and encrypted with the new ones.
+This feature is not yet present in the current version. It is an important feature that will be added very soon. It refers to the need of re-encrypting all secrets if either the memorable password, the configuration password or both are changed. All secrets will need to be retrieved using the old passwords and re-encrypted with the new ones.
 
 ## <a id="work"></a>Work in progress
 Coming soon, in the next releases, there will be some feature improvements and fixes, like:
@@ -261,7 +263,7 @@ Coming soon, in the next releases, there will be some feature improvements and f
 *   adding new commands to the command line interface, like query capabilities,
 *   adding a logging layer,
 *   adding batch processing of secrets' insertion
-*   required bug fixes
+*   required bug fixes.
 
 On a longer time scale:
 *   Adding a graphical user interface
