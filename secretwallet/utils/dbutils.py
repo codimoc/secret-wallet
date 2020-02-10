@@ -174,13 +174,22 @@ def has_secret(domain, access):
     return 'Item' in resp and len(resp['Item'])>0
     
 def delete_secret(domain, access):
-    """Delete a secret by primary key
+    """Delete a secret by primary key.
     input:
     domain     the domain, i.e. logical context, of the secret
     access     the secret sub-domain or access specification
     """    
     _get_table().delete_item(Key={'domain'  : domain,
                                   'access'  : access})
+    
+def delete_secrets(secrets, table):
+    """Deletes all secrets passed as list of (domain, access) pairs
+    input:
+    secrets    a list of secrets, as domain, asset pairs
+    table      the remote table
+    """
+    for s in secrets:
+        table.delete_item(s[0], s[1])
     
 def get_secret(domain, access, mem_pwd, salt=None):
     """Retrieves a secret by primary key
@@ -206,9 +215,9 @@ def get_secret(domain, access, mem_pwd, salt=None):
     return ret
     
 def list_secrets(domain):
-    """List all secretwallet by domain
+    """List all secrets by domain
     input:
-    domain    the domain of the secretwallet. If null all records are returned
+    domain    the domain of the secrets. If null all records are returned
     output:
     a list of (domain, access) tuples
     """
@@ -222,7 +231,7 @@ def list_secrets(domain):
     return secrets
     
 def count_secrets():
-    """Returns the total number of secretwallet"""
+    """Returns the total number of secrets"""
     return _get_table().scan(Select='COUNT')['Count']
 
 def encrypt_info(info,mem_pwd, salt):
