@@ -225,7 +225,7 @@ def test_encrypt_decrypt_info():
     for key in info:
         assert ide[key] == info[key]
     
-def test_delete_secrets():
+def test_delete_secrets(set_up):
     c_pwd = u"passwd"
     m_pwd = u"memorabile"
     domain = u"my_domain"  
