@@ -226,20 +226,17 @@ def test_encrypt_decrypt_info():
         assert ide[key] == info[key]
     
 def test_delete_secrets(set_up):
-    c_pwd = u"passwd"
     m_pwd = u"memorabile"
     domain = u"my_domain"  
     info = {'message':'secret'}
-    key = cu.encrypt_key(c_pwd)
     cnt = du.count_secrets()
-    table = _get_table()
     for i in range(5):
         access = f"access_{i}"
-        du.insert_secret(domain, access, None, None, info, m_pwd, key)
-#     assert cnt+5 == du.count_secrets()
+        du.insert_secret(domain, access, None, None, info, m_pwd, parameters.get_salt_key())
+    assert cnt+5 == du.count_secrets()
     # now get the secret back by domain
     secrets = du.list_secrets(domain)
     #delete them in block
-    du.delete_secrets(secrets, table)    
+    du.delete_secrets(secrets)    
     #check that they are gone
     assert cnt== du.count_secrets()

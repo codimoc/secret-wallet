@@ -6,7 +6,8 @@ Created on 1 Jan 2020
 
 import argparse
 import sys
-from secretwallet.utils.dbutils import has_secret,get_secret, insert_secret, list_secrets, update_secret, delete_secret
+from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets,\
+                                       update_secret, delete_secret, delete_secrets
 from secretwallet.constants import parameters
 from secretwallet.session.service import start_my_session
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
@@ -129,14 +130,19 @@ secretwallet <command> -h
                             required=True,
                             help='The domain (category) of the secret')
         parser.add_argument('-a',
-                        dest='access',
-                        required=True,
-                        help='The sub=domain (sub-category or access) of the secret')
+                            dest ='access',
+                            help='The sub=domain (sub-category or access) of the secret')
         args = parser.parse_args(sys.argv[2:])
         #TODO: replace with logging
         print('Running delete with arguments %s' % args)
         try:
-            delete_secret(args.domain, args.access)
+            if args.access is not None:
+                confirm_delete([(args.domain, args.access)])
+                delete_secret(args.domain, args.access)
+            else:
+                secrets = list_secrets(args.domain)
+                confirm_delete(secrets)
+                delete_secrets(secrets)
         except Exception as e:
             #TODO: log error
             print(repr(e))            
@@ -243,4 +249,18 @@ def display_secret(secret):
         for k,v in secret['info'].items():
             print(f"{k:20}: {v}")
     print(f"\nLast updated        : {secret['timestamp']}")
-    print("**********************************************************")   
+    print("**********************************************************")
+    
+    
+def confirm_delete(secrets):
+    "Confirm secets to delete"
+    print("**********************************************************")
+    print("Secrets to delete:")
+    print("<%-19s:<access>"%'domain>')
+    for d,a in secrets:
+        print("%-20s:%s"%(d,a))    
+    print("**********************************************************")
+    answ = input("\nDo you want to delete these secrets (yes|no) ")
+    if not answ.lower().startswith('y'):
+        exit(1)    
+        

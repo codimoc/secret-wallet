@@ -182,14 +182,13 @@ def delete_secret(domain, access):
     _get_table().delete_item(Key={'domain'  : domain,
                                   'access'  : access})
     
-def delete_secrets(secrets, table):
+def delete_secrets(secrets):
     """Deletes all secrets passed as list of (domain, access) pairs
     input:
     secrets    a list of secrets, as domain, asset pairs
-    table      the remote table
     """
     for s in secrets:
-        table.delete_item(s[0], s[1])
+        delete_secret(s[0], s[1])
     
 def get_secret(domain, access, mem_pwd, salt=None):
     """Retrieves a secret by primary key
