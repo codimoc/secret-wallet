@@ -2,7 +2,6 @@ import pytest
 import secretwallet.utils.cryptutils as cu
 import secretwallet.utils.dbutils as du 
 from secretwallet.constants import parameters
-from build.lib.secretwallet.utils.dbutils import _get_table
 
 @pytest.fixture
 def set_up():
