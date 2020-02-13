@@ -160,9 +160,7 @@ secretwallet <command> -h
         print('Running list with arguments %s' % args)
         try:
             secrets = list_secrets(args.domain)
-            print("<%-19s:<access>"%'domain>')
-            for s in secrets:
-                print("%-20s:%s"%s)
+            display_list("List of secrets", secrets)
         except Exception as e:
             #TODO: log error
             print(repr(e))                    
@@ -252,14 +250,20 @@ def display_secret(secret):
     print("**********************************************************")
     
     
-def confirm_delete(secrets):
-    "Confirm secets to delete"
+def display_list(message, secrets):
+    field_lenght = max([len(x[0]) for x in secrets])+5
+    format_header = f"<%-{field_lenght-1}s:<access>"
+    format_record = f"%-{field_lenght}s:%s"
     print("**********************************************************")
-    print("Secrets to delete:")
-    print("<%-19s:<access>"%'domain>')
+    print(f"{message}:")
+    print(format_header%'domain>')
     for d,a in secrets:
-        print("%-20s:%s"%(d,a))    
-    print("**********************************************************")
+        print(format_record%(d,a))
+    print("**********************************************************")        
+    
+def confirm_delete(secrets):
+    "Confirm secrets to delete"
+    display_list("Secrets to delete", secrets)
     answ = input("\nDo you want to delete these secrets (yes|no) ")
     if not answ.lower().startswith('y'):
         exit(1)    
