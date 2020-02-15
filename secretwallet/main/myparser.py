@@ -6,6 +6,7 @@ Created on 1 Jan 2020
 
 import argparse
 import sys
+import pkg_resources as pkg
 from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets,\
                                        update_secret, delete_secret, delete_secrets
 from secretwallet.constants import parameters
@@ -29,15 +30,17 @@ The list of secretwallet commands are:
    reconf          change an existing configuration
    session         (testing) start a session to store the memorable password between consecutive calls
    client          (testing) retrieves the memorable password from the running session
-   help            print the main help page 
+   help            print the main help page
+   version         the version of this package
    ....
    
 For individual help type:
 secretwallet <command> -h
-''')
+''')        
         parser.add_argument('command',
-                            choices=['set','get','delete','list','query','reconf','help','session','client'],
-                            help='Subcommand to run')
+                            action='store',
+                            choices=['set','get','delete','list','query','reconf','help','session','client', 'version'],
+                            help='Command to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.command):
@@ -168,7 +171,9 @@ secretwallet <command> -h
     def help(self):
         self._parser.print_help()
         
-        
+    def version(self):
+        print("secret-wallet-codimoc version %s"%pkg.get_distribution('secret-wallet-codimoc').version)
+                       
     #TODO: Below here is experimental. Remove at the end    
     def session(self):
         parser = argparse.ArgumentParser(
