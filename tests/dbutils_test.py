@@ -239,3 +239,29 @@ def test_delete_secrets(set_up):
     du.delete_secrets(secrets)    
     #check that they are gone
     assert cnt== du.count_secrets()
+    
+    
+def test_rename_secret(set_up):
+    m_pwd = u"memorabile"
+    domain = u"my_domain"
+    access = u"my_access"
+    new_domain = u"new_domain"
+    new_access = u"new_access"      
+    info = {'message':'secret'}
+    try:
+        #before
+        assert not du.has_secret(domain, access)
+        assert not du.has_secret(new_domain, new_access)
+        #after insertion
+        du.insert_secret(domain, access, None, None, info, m_pwd, parameters.get_salt_key())    
+        assert du.has_secret(domain, access)
+        assert not du.has_secret(new_domain, new_access)
+        #after rename  
+        du.rename_secret(domain, access, new_domain, new_access)
+        assert not du.has_secret(domain, access)
+        assert du.has_secret(new_domain, new_access)
+        res = du.get_secret(new_domain, new_access, m_pwd, parameters.get_salt_key())
+        assert info['message'] == res['info']['message']
+    finally:
+        du.delete_secret(domain, access)
+        du.delete_secret(new_domain, new_access)

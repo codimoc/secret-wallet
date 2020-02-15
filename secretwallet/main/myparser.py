@@ -8,7 +8,7 @@ import argparse
 import sys
 import pkg_resources as pkg
 from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets,\
-                                       update_secret, delete_secret, delete_secrets
+                                       update_secret, delete_secret, delete_secrets, rename_secret
 from secretwallet.constants import parameters
 from secretwallet.session.service import start_my_session
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
@@ -25,8 +25,9 @@ The list of secretwallet commands are:
    set             Insert a new secret
    get             Retrieves a secret
    delete          Remove a secret
-   list            list all secretwallet in a given domain
-   query           query secretwallet based on a condition
+   rename          rename a secret
+   list            list all secrets in a given domain
+   query           query secrets based on a condition
    reconf          change an existing configuration
    session         (testing) start a session to store the memorable password between consecutive calls
    client          (testing) retrieves the memorable password from the running session
@@ -39,12 +40,12 @@ secretwallet <command> -h
 ''')        
         parser.add_argument('command',
                             action='store',
-                            choices=['set','get','delete','list','query','reconf','help','session','client', 'version'],
+                            choices=['set','get','delete', 'rename', 'list','query','reconf','help','session','client', 'version'],
                             help='Command to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.command):
-            print('Unrecognized command')
+            my_output('Unrecognized command')
             parser.print_help()
             exit(1)
         # use dispatch pattern to invoke method with same name
@@ -79,8 +80,7 @@ secretwallet <command> -h
                             '--info_value',
                             help='The value in an information map')                       
         args = parser.parse_args(sys.argv[2:])
-        #TODO: replace with logging
-        print('Running set with arguments %s' % args)
+        my_output('Running set with arguments %s' % args)
         if args.info_key is None or args.info_value is None:
             info = None
         else:
@@ -94,8 +94,7 @@ secretwallet <command> -h
             if need_session:
                 start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
         except Exception as e:
-            #TODO: log error instead
-            print(repr(e))
+            my_output(repr(e))
         
     def get(self):
         #TODO: manage memorable password
@@ -112,16 +111,14 @@ secretwallet <command> -h
                         required=True,
                         help='The sub=domain (sub-category or access) of the secret')
         args = parser.parse_args(sys.argv[2:])
-        #TODO: replace with logging
-        print('Running get with arguments %s' % args)
+        my_output('Running get with arguments %s' % args)
         try:
             memorable, need_session = pm.get_memorable_password(False)
             display_secret(get_secret(args.domain, args.access, memorable))
             if need_session:
                 start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())            
         except Exception as e:
-            #TODO: log error
-            print(repr(e))
+            my_output(repr(e))
             
     def delete(self):
         parser = argparse.ArgumentParser(
@@ -136,8 +133,7 @@ secretwallet <command> -h
                             dest ='access',
                             help='The sub=domain (sub-category or access) of the secret')
         args = parser.parse_args(sys.argv[2:])
-        #TODO: replace with logging
-        print('Running delete with arguments %s' % args)
+        my_output('Running delete with arguments %s' % args)
         try:
             if args.access is not None:
                 confirm_delete([(args.domain, args.access)])
@@ -147,8 +143,47 @@ secretwallet <command> -h
                 confirm_delete(secrets)
                 delete_secrets(secrets)
         except Exception as e:
-            #TODO: log error
-            print(repr(e))            
+            my_output(repr(e))            
+
+    def rename(self):
+        parser = argparse.ArgumentParser(
+            description='Renames a secret',
+            prog='secretwallet rename')
+        #required arguments
+        parser.add_argument('-d',
+                            dest='domain',
+                            required=True,
+                            help='The domain (category) of the secret')
+        parser.add_argument('-a',
+                            dest ='access',
+                            required=True,
+                            help='The sub=domain (sub-category or access) of the secret')
+        parser.add_argument('-nd',
+                            dest='new_domain',
+                            default = None,
+                            help='The new domain')
+        parser.add_argument('-na',
+                            dest ='new_access',
+                            default = None,
+                            help='The new asset')        
+        args = parser.parse_args(sys.argv[2:])
+        my_output('Running rename with arguments %s' % args)
+        try:
+            if args.new_domain is None and args.new_access is None:
+                my_output("No new keys have been passed", True)
+            elif args.new_domain == args.domain and args.new_access == args.access:
+                my_output("Both new values are the same as the originals: nothing to do", True)
+            elif not has_secret(args.domain, args.access):
+                my_output("Could not find the secret to rename", True)                                    
+            else:
+                if args.new_domain is None:
+                    args.new_domain = args.domain
+                if args.new_access is None:
+                    args.new_access = args.access
+                confirm_rename([(args.domain, args.access)])                                    
+                rename_secret(args.domain, args.access, args.new_domain, args.new_access)
+        except Exception as e:
+            my_output(repr(e))
 
     def list(self):
         parser = argparse.ArgumentParser(
@@ -159,14 +194,12 @@ secretwallet <command> -h
                             '--domain',
                             help='The domain (category) of the secretwallet. If not given all secretwallet are returned')
         args = parser.parse_args(sys.argv[2:])
-        #TODO: replace with logging
-        print('Running list with arguments %s' % args)
+        my_output('Running list with arguments %s' % args)
         try:
             secrets = list_secrets(args.domain)
             display_list("List of secrets", secrets)
         except Exception as e:
-            #TODO: log error
-            print(repr(e))                    
+            my_output(repr(e))                    
         
     def help(self):
         self._parser.print_help()
@@ -195,13 +228,11 @@ secretwallet <command> -h
                             help='The value to store in the session',
                             default='not set')                
         args = parser.parse_args(sys.argv[2:])
-        #TODO: replace with logging
-        print('Starting a secret wallet session with parameters %s'%args)
+        my_output('Starting a secret wallet session with parameters %s'%args)
         try:
             start_my_session(args.value, args.lifetime, args.timeout)
         except Exception as e:
-            #TODO: log error instead
-            print(repr(e))
+            my_output(repr(e))
             
             
     def client(self):
@@ -219,23 +250,21 @@ secretwallet <command> -h
                             help='The value to store in the session',
                             default='not set')                
         args = parser.parse_args(sys.argv[2:])
-        #TODO: replace with logging
-        print('Starting a secret wallet client with parameters %s'%args)
+        my_output('Starting a secret wallet client with parameters %s'%args)
         try:
             if args.action == 'get':
-                print(get_session_password())
+                my_output(get_session_password())
             elif args.action == 'set':
                 set_session_password(args.value)
             elif args.action == 'stop':
                 stop_service()
             elif args.action == 'test':
                 if is_connected():
-                    print('connected')
+                    my_output('connected')
                 else:
-                    print('not connected')                
+                    my_output('not connected')                
         except Exception as e:
-            #TODO: log error instead
-            print(repr(e))                           
+            my_output(repr(e))                           
             
             
 def display_secret(secret):
@@ -269,7 +298,24 @@ def display_list(message, secrets):
 def confirm_delete(secrets):
     "Confirm secrets to delete"
     display_list("Secrets to delete", secrets)
-    answ = input("\nDo you want to delete these secrets (yes|no) ")
+    answ = my_input("\nDo you want to delete these secrets (yes|no) ")
     if not answ.lower().startswith('y'):
-        exit(1)    
+        exit(1)
         
+def confirm_rename(secrets):
+    "Confirm secret to rename"
+    display_list("Secret to rename", secrets)
+    answ = my_input("\nDo you want to rename this secret (yes|no) ")
+    if not answ.lower().startswith('y'):
+        exit(1)            
+        
+def my_input(question):
+    "Mockable input function"
+    return input(question)
+
+def my_output(message, exit=False):
+    "Mockable output function"
+    #TODO: add logging here
+    print(message)
+    if exit:
+        exit(1)

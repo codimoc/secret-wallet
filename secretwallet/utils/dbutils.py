@@ -161,7 +161,36 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt=
                                  ConditionExpression       = condition_expression 
                                  )
     except:
-        pass #the condition failed bu there should be no side effect
+        pass #the condition failed but there should be no side effect
+    
+def rename_secret(domain, access, new_domain, new_access):
+    """Rename the domain and access of a secret
+    input:
+    domain     the domain, i.e. logical context, of the secret
+    access     the secret sub-domain or access specification
+    new_domain the new value for the domain
+    new_access the new value for the access
+    """
+    table = _get_table()
+    resp = table.get_item(Key={'domain'  :domain,
+                               'access'  : access})
+    if 'Item' in resp and len(resp['Item'])>0:
+        try:
+            item = resp['Item']
+            table.put_item(Item={'domain'    : new_domain,
+                                 'access'    : new_access,
+                                 'uid'       : item['uid'],
+                                 'pwd'       : item['pwd'],
+                                 'info'      : item['info'],
+                                 'timestamp' : datetime.now().isoformat()})
+            
+            table.delete_item(Key={'domain'  : domain,
+                                   'access'  : access})
+        except Exception as e:
+            #TODO: add logging
+            print(e)    
+    else:
+        print(f"Could not find secret ({domain},{access})")
     
 def has_secret(domain, access):
     """Checks the existence of a secret
