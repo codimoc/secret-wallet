@@ -6,6 +6,7 @@ import pytest
 from secretwallet.constants import parameters
 from secretwallet.main.configuration import get_configuration
 from secretwallet.main.myparser import Parser
+import secretwallet.main.myparser as myp
 from secretwallet.session.service import my_session
 from secretwallet.session.client import is_connected, stop_service
 import secretwallet.utils.dbutils as du
@@ -20,9 +21,12 @@ PWD    = 'pass'
 INFO   = {'key':'value'}
 MEM    = 'memorable'
 
-
 @pytest.fixture
 def set_up():
+    old_input = myp.my_input
+    #mocking the user input
+    myp.my_input = lambda _:'yes'
+    
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path,'data','test_integration.json')
     parameters.set_data(get_configuration(conf_file)) 
@@ -33,6 +37,7 @@ def set_up():
        
     yield
     
+    myp.my_input = old_input
     du.delete_secret(DOMAIN,ACCESS)
     parameters.clear()
     
@@ -103,6 +108,50 @@ def test_update_info(set_up):
     assert 'first_value' == res['info']['first_key']
     assert 'second_value' == res['info']['second_key']
     
+@pytest.mark.integration        
+def test_rename_secret(set_up):
+    new_domain = "new domain"
+    new_access = "new_access"
+    
+    sleep(1)
+    sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
+    Parser()
+    assert du.has_secret(DOMAIN, ACCESS)
+    assert not du.has_secret(new_domain, new_access)
+    
+    sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', ACCESS, '-nd', new_domain,'-na', new_access]
+    Parser()
+    assert not du.has_secret(DOMAIN, ACCESS)
+    assert du.has_secret(new_domain, new_access)
+    du.delete_secret(new_domain, new_access)
+    
+def test_rename_secret_no_new_values(set_up):
+    sleep(1)
+    sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
+    Parser()
+    sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', ACCESS]
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert "No new keys have been passed" in buf.getvalue()
+        
+def test_rename_secret_same_values(set_up):
+    sleep(1)
+    sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
+    Parser()
+    sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', ACCESS, '-nd', DOMAIN, '-na', ACCESS]
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert "Both new values are the same as the originals: nothing to do" in buf.getvalue()            
+           
+def test_rename_secret_wrong_values(set_up):
+    sleep(1)
+    sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
+    Parser()
+    sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', 'wrong', '-nd', DOMAIN, '-na', ACCESS]
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert "Could not find the secret to rename" in buf.getvalue()           
+           
 def test_wrong_salt(set_up):
     my_access = 'another'
     other_key = cu.encrypt_key('azzo')
