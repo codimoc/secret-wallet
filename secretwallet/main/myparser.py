@@ -9,10 +9,12 @@ import sys
 import pkg_resources as pkg
 from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets,\
                                        update_secret, delete_secret, delete_secrets, rename_secret
+from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
 from secretwallet.constants import parameters
 from secretwallet.session.service import start_my_session
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
 import secretwallet.utils.password_manager as pm
+from email.policy import default
 
 class Parser(object):
 
@@ -27,6 +29,7 @@ The list of secretwallet commands are:
    delete          Remove a secret
    rename          rename a secret
    list            list all secrets in a given domain
+   conf            manage the configuration file
    query           query secrets based on a condition
    reconf          change an existing configuration
    session         (testing) start a session to store the memorable password between consecutive calls
@@ -40,7 +43,8 @@ secretwallet <command> -h
 ''')        
         parser.add_argument('command',
                             action='store',
-                            choices=['set','get','delete', 'rename', 'list','query','reconf','help','session','client', 'version'],
+                            choices=['set','get','delete', 'rename', 'list', 'conf',
+                                     'query','reconf','help','session','client', 'version'],
                             help='Command to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
@@ -187,19 +191,58 @@ secretwallet <command> -h
 
     def list(self):
         parser = argparse.ArgumentParser(
-            description='Lists all secretwallet in a given domain',
+            description='Lists all secrets in a given domain',
             prog='secretwallet list')
         #optional arguments
         parser.add_argument('-d',
                             '--domain',
-                            help='The domain (category) of the secretwallet. If not given all secretwallet are returned')
+                            help='The domain (category) of the secrets. If not given all secrets are returned')
         args = parser.parse_args(sys.argv[2:])
         my_output('Running list with arguments %s' % args)
         try:
             secrets = list_secrets(args.domain)
             display_list("List of secrets", secrets)
         except Exception as e:
-            my_output(repr(e))                    
+            my_output(repr(e))
+            
+    def conf(self):
+        parser = argparse.ArgumentParser(
+            description='Manage the configuration parameters',
+            prog='secretwallet conf')
+        #optional arguments
+        parser.add_argument('-l',
+                            '--list',
+                            action = 'store_true',
+                            default = False,
+                            help='List the existing configuration parameters')
+        parser.add_argument('-to',
+                            '--timeout',
+                            dest = 'timeout',
+                            type = int,
+                            default = -1,
+                            help='Session time-out in seconds')
+        parser.add_argument('-lf',
+                            '--lifetime',
+                            dest = 'lifetime',
+                            type = int,
+                            default = -1,
+                            help='Session lifetime in seconds')                
+        args = parser.parse_args(sys.argv[2:])
+        my_output('Running conf with arguments %s' % args)
+        try:
+            if (args.list):
+                list_configuration()
+            elif args.timeout >=0 or args.lifetime >=0:
+                conf = get_configuration()
+                if args.timeout >=0:
+                    conf['session_timeout']=args.timeout
+                if args.lifetime >=0:
+                    conf['session_lifetime']=args.lifetime
+                set_configuration_data(conf)
+            else:
+                pass
+        except Exception as e:
+            my_output(repr(e))                                
         
     def help(self):
         self._parser.print_help()

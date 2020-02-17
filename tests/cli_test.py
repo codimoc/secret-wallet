@@ -4,7 +4,7 @@ import io
 from contextlib import redirect_stdout
 import pytest
 from secretwallet.constants import parameters
-from secretwallet.main.configuration import get_configuration
+from secretwallet.main.configuration import get_configuration, set_configuration_data
 from secretwallet.main.myparser import Parser
 import secretwallet.main.myparser as myp
 from secretwallet.session.service import my_session
@@ -29,7 +29,8 @@ def set_up():
     
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path,'data','test_integration.json')
-    parameters.set_data(get_configuration(conf_file)) 
+    conf_data = get_configuration(conf_file)
+    parameters.set_data(conf_data) 
     du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM)
     
     p =Process(target=my_session, args =('memorable', 60, 10))
@@ -37,14 +38,15 @@ def set_up():
        
     yield
     
-    myp.my_input = old_input
-    du.delete_secret(DOMAIN,ACCESS)
-    parameters.clear()
-    
     if is_connected():
         stop_service()
     p.terminate()    
     
+    
+    myp.my_input = old_input
+    du.delete_secret(DOMAIN,ACCESS)
+    parameters.clear()
+    set_configuration_data(conf_data, conf_file)    
 
 @pytest.mark.integration
 def test_help(set_up):
@@ -150,7 +152,29 @@ def test_rename_secret_wrong_values(set_up):
     sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', 'wrong', '-nd', DOMAIN, '-na', ACCESS]
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
-        assert "Could not find the secret to rename" in buf.getvalue()           
+        assert "Could not find the secret to rename" in buf.getvalue() 
+        
+def test_conf_list(set_up):
+    sys.argv=['secret_wallet','conf','-l']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert "secret wallet configuration is located" in buf.getvalue()
+        
+def test_conf_timeout(set_up):
+    sys.argv=['secret_wallet','conf','-to', '121']
+    Parser()
+    sys.argv=['secret_wallet','conf','-l']    
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert "121" in buf.getvalue()
+        
+def test_conf_lifetime(set_up):
+    sys.argv=['secret_wallet','conf','-lf', '666']
+    Parser()
+    sys.argv=['secret_wallet','conf','-l']    
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert "666" in buf.getvalue()                                   
            
 def test_wrong_salt(set_up):
     my_access = 'another'

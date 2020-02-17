@@ -84,6 +84,18 @@ def get_configuration(config_file = CONFIG_FILE):
     with open(config_file, 'r') as cfile:
         return json.load(cfile)
     
+def list_configuration(config_file = CONFIG_FILE):
+    """List the configuration parameters
+    input:
+    config_file    a path to the configuration file
+    """
+    conf = get_configuration(config_file)
+    display_configuration(config_file, 'secret wallet configuration is located', conf)
+    
+def set_configuration_data(conf_data, conf_file = CONFIG_FILE):
+    with open(conf_file, 'w') as cfile:
+        json.dump(conf_data, cfile)    
+    
 def set_configuration(conf_key, profile = None, table = None, salt = None, config_file = CONFIG_FILE):
     """This writes the system configuration file with the specified overrides and the encrypted salt
        If the configuration file exists, this function returns an error message, since reconfiguing the salt
@@ -107,8 +119,7 @@ def set_configuration(conf_key, profile = None, table = None, salt = None, confi
     if salt is not None:
         conf['salt'] = salt
     os.makedirs(os.path.dirname(config_file), exist_ok=True)
-    with open(config_file, 'w') as cfile:
-        json.dump(conf, cfile)
+    set_configuration_data(conf, config_file)
     
 def load_configurations(conf_file = CONFIG_FILE, credentials_file = CREDENTIALS_FILE):
     """
