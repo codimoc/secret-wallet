@@ -1,4 +1,5 @@
 import pytest
+import cryptography
 import secretwallet.utils.cryptutils as cu
 import secretwallet.utils.dbutils as du 
 from secretwallet.constants import parameters
@@ -28,6 +29,34 @@ def test_insert_delete_login(set_up):
     finally:
         du.delete_secret(domain, access)
         assert ns == du.count_secrets()
+        
+def test_wrong_salt_key(set_up):
+    c_pwd = 'pirillo'
+    wrong_key = cu.encrypt_key(c_pwd)
+    m_pwd = u"memorabile"
+    domain = u"my_domain" 
+    access = u"my_access"    
+    secret_uid = u"me@home"
+    secret_pwd = u"ciao mamma"
+    try:        
+        du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd, wrong_key)
+        with pytest.raises(cryptography.fernet.InvalidToken) as e:
+            du.get_secret(domain, access, m_pwd)
+    finally:
+        du.delete_secret(domain, access)
+        
+def test_wrong_memorable(set_up):
+    m_pwd = u"memorabile"
+    domain = u"my_domain" 
+    access = u"my_access"    
+    secret_uid = u"me@home"
+    secret_pwd = u"ciao mamma"
+    try:        
+        du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd)
+        with pytest.raises(cryptography.fernet.InvalidToken) as e:
+            du.get_secret(domain, access, 'pirillo')
+    finally:
+        du.delete_secret(domain, access)                
         
 def test_insert_select_compare_login(set_up):
     m_pwd = u"memorabile"

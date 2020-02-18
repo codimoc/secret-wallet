@@ -9,8 +9,8 @@ from secretwallet.main.myparser import Parser
 import secretwallet.main.myparser as myp
 from secretwallet.session.service import my_session
 from secretwallet.session.client import is_connected, stop_service
-import secretwallet.utils.dbutils as du
 import secretwallet.utils.cryptutils as cu
+import secretwallet.utils.dbutils as du
 from multiprocessing import Process
 from time import sleep
 
@@ -36,17 +36,17 @@ def set_up():
     p =Process(target=my_session, args =('memorable', 60, 10))
     p.start()
        
-    yield
+    yield conf_file
+            
+    myp.my_input = old_input
+    du.delete_secret(DOMAIN,ACCESS)
+    parameters.clear()
+    set_configuration_data(conf_data, conf_file) 
     
     if is_connected():
         stop_service()
     p.terminate()    
     
-    
-    myp.my_input = old_input
-    du.delete_secret(DOMAIN,ACCESS)
-    parameters.clear()
-    set_configuration_data(conf_data, conf_file)    
 
 @pytest.mark.integration
 def test_help(set_up):
@@ -160,30 +160,12 @@ def test_conf_list(set_up):
         Parser()
         assert "secret wallet configuration is located" in buf.getvalue()
         
-def test_conf_timeout(set_up):
-    sys.argv=['secret_wallet','conf','-to', '121']
-    Parser()
-    sys.argv=['secret_wallet','conf','-l']    
-    with io.StringIO() as buf, redirect_stdout(buf):
-        Parser()
-        assert "121" in buf.getvalue()
-        
-def test_conf_lifetime(set_up):
-    sys.argv=['secret_wallet','conf','-lf', '666']
-    Parser()
-    sys.argv=['secret_wallet','conf','-l']    
-    with io.StringIO() as buf, redirect_stdout(buf):
-        Parser()
-        assert "666" in buf.getvalue()                                   
-           
+
 def test_wrong_salt(set_up):
     my_access = 'another'
-    other_key = cu.encrypt_key('azzo')
+    other_key = cu.encrypt_key('pirillo')
     sleep(1)
-    #insert
-    sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', my_access, '-u','login','-p','password']
-    Parser()
-    parameters.set_salt_key(other_key) #change the salt
+    du.insert_secret(DOMAIN, my_access, 'login', 'password', None, 'memorable', other_key)
     #the following shoud produce and InvalidToken error
     sys.argv=['secret_wallet','get','-d',DOMAIN, '-a', my_access]
     with io.StringIO() as buf, redirect_stdout(buf):

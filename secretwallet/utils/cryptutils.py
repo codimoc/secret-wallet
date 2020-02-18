@@ -35,7 +35,7 @@ def _encrypt(secret, mem_pswd, salt):
     f = Fernet(key)
     return f.encrypt(secret.encode("latin1"))
     
-def encrypt(secret, mem_pswd, salt = None):
+def encrypt(secret, mem_pswd, salt):
     """Encrypts a secretwallet using a fixed key and a memorable password
     input:
     secret       text to encrypt (unicode)
@@ -44,8 +44,6 @@ def encrypt(secret, mem_pswd, salt = None):
     output:
     The encrypted (byte string) value 
     """
-    if salt is None:        
-        salt = parameters.get_salt_key() 
     return _encrypt(secret, mem_pswd, salt).decode('latin1')
 
 def _decrypt(secret, mem_pswd, salt):
@@ -59,7 +57,7 @@ def _decrypt(secret, mem_pswd, salt):
     f = Fernet(key)
     return f.decrypt(secret).decode("latin1")    
  
-def decrypt(secret, mem_pswd, salt = None):
+def decrypt(secret, mem_pswd, salt):
     """Decrypts a secretwallet using a fixed key and a memorable password
     input:
     secret       encrypted secret
@@ -68,6 +66,4 @@ def decrypt(secret, mem_pswd, salt = None):
     output:
     The decrypted secret 
     """
-    if salt is None:
-        salt = parameters.get_salt_key()
     return _decrypt(secret.encode('latin1'), mem_pswd, salt)    
