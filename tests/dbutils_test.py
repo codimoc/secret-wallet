@@ -3,6 +3,7 @@ import cryptography
 import secretwallet.utils.cryptutils as cu
 import secretwallet.utils.dbutils as du 
 from secretwallet.constants import parameters
+from build.lib.secretwallet.utils.dbutils import list_secrets
 
 @pytest.fixture
 def set_up():
@@ -15,6 +16,17 @@ def set_up():
     yield 
     
     parameters.clear()
+    
+@pytest.fixture
+def insert_records():
+    m_pwd = 'memorable'
+    du.insert_secret("d1", "a1", "u1", "p1", {"k1":"v1","k2":"v2"}, m_pwd)
+    du.insert_secret("d1", "a2", "u2", "p2", {"k3":"v3"}, m_pwd)
+    du.insert_secret("d2", "a3", "u3", "p3", {"k4":"v4"}, m_pwd)
+    yield
+    
+    du.delete_secrets(du.list_secrets("d1"))
+    du.delete_secrets(du.list_secrets("d2"))
 
 def test_insert_delete_login(set_up):
     m_pwd = u"memorabile"
@@ -40,7 +52,7 @@ def test_wrong_salt_key(set_up):
     secret_pwd = u"ciao mamma"
     try:        
         du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd, wrong_key)
-        with pytest.raises(cryptography.fernet.InvalidToken) as e:
+        with pytest.raises(cryptography.fernet.InvalidToken):
             du.get_secret(domain, access, m_pwd)
     finally:
         du.delete_secret(domain, access)
@@ -53,7 +65,7 @@ def test_wrong_memorable(set_up):
     secret_pwd = u"ciao mamma"
     try:        
         du.insert_secret(domain, access, secret_uid, secret_pwd, None, m_pwd)
-        with pytest.raises(cryptography.fernet.InvalidToken) as e:
+        with pytest.raises(cryptography.fernet.InvalidToken):
             du.get_secret(domain, access, 'pirillo')
     finally:
         du.delete_secret(domain, access)                
@@ -294,3 +306,22 @@ def test_rename_secret(set_up):
     finally:
         du.delete_secret(domain, access)
         du.delete_secret(new_domain, new_access)
+        
+def test_reconf_memorable(set_up, insert_records):
+        old_mem = "memorable"
+        new_mem = 'another'
+        secrets = list_secrets("d1") + list_secrets("d2")
+        assert 3 == len(secrets)
+        sec = du.get_secret('d1', 'a1', old_mem)
+        assert "v1" == sec['info']['k1']
+        
+        du.reconf_memorable(secrets, old_mem, new_mem)
+        secrets = list_secrets("d1") + list_secrets("d2")        
+        assert 3 == len(secrets)
+        secrets = list_secrets("I") + list_secrets("D")
+        assert 0 == len(secrets)
+        sec = du.get_secret('d1', 'a1', new_mem)
+        assert "v1" == sec['info']['k1']
+        
+        with pytest.raises(cryptography.fernet.InvalidToken):
+            du.get_secret('d1', 'a1', old_mem)

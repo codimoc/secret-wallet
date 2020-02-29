@@ -11,6 +11,8 @@ from datetime import datetime
 from secretwallet.constants import parameters
 from secretwallet.utils.cryptutils import encrypt, decrypt
 
+SEPARATOR="#-#"
+
 def _get_table():
     #TODO: manage Session in a better way. The table resource should be stored in the Session
     session = boto3.session.Session(profile_name=parameters.get_profile_name())
@@ -257,6 +259,41 @@ def list_secrets(domain):
     for i in resp['Items']:
         secrets.append((i['domain'],i['access']))
     return secrets
+
+def reconf_memorable(secrets, old_mem, new_mem):
+    """Reconfigure all secrets changing the memorable password
+    input:
+    secrets    a list of secrets, as domain, asset pairs
+    old_mem    old memorable password
+    new_mem    new memorable password
+    """
+    for s in secrets:
+        domain = s[0]
+        access = s[1]
+        stage = 0    
+        try:
+            #TODO: add logging
+            print(f"Stage {stage}: Retrieving secret ({domain},{access}")
+            secret = get_secret(domain, access, old_mem)
+            stage = 1
+            print(f"Stage {stage}: Tagging for insertion reconfigured secret ({domain},{access})")
+            insert_secret("I", f"{domain}{SEPARATOR}{access}", secret['uid'],  secret['pwd'],  secret['info'], new_mem)
+            stage = 2
+            print(f"Stage {stage}: Tagging for deletion secret ({domain},{access})")
+            rename_secret(domain, access, "D", f"{domain}{SEPARATOR}{access}")
+            stage = 3
+            print(f"Stage {stage}: Inserting reconfigured secret ({domain},{access})")
+            rename_secret("I", f"{domain}{SEPARATOR}{access}", domain, access)
+            stage = 4
+            print(f"Stage {stage}: Removing ols secret ({domain},{access})")
+            delete_secret("D", f"{domain}{SEPARATOR}{access}")
+            stage = 5
+            print(f"Stage {stage}: Completed reconfiguring secret ({domain},{access})")
+        except Exception as e:
+            #TODO: add logging
+            print(e)
+            print(f"Stage {stage}: Could not reconfigure ({domain},{access})")            
+            
     
 def count_secrets():
     """Returns the total number of secrets"""
