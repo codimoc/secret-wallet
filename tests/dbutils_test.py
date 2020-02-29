@@ -27,6 +27,14 @@ def insert_records():
     
     du.delete_secrets(du.list_secrets("d1"))
     du.delete_secrets(du.list_secrets("d2"))
+    
+@pytest.fixture
+def cleanup_backups():
+    pass
+    yield
+    
+    du._cleanup_table_backups('backup')
+
 
 def test_insert_delete_login(set_up):
     m_pwd = u"memorabile"
@@ -325,3 +333,12 @@ def test_reconf_memorable(set_up, insert_records):
         
         with pytest.raises(cryptography.fernet.InvalidToken):
             du.get_secret('d1', 'a1', old_mem)
+            
+def test_reconf_memorable_with_backup(set_up, insert_records, cleanup_backups):
+        old_mem = "memorable"
+        new_mem = 'another'
+        secrets = list_secrets("d1") + list_secrets("d2")
+        assert 3 == len(secrets)
+        arn = du.reconf_memorable(secrets, old_mem, new_mem, True)
+        assert arn is not None
+        

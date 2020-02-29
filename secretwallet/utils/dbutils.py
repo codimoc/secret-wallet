@@ -19,6 +19,20 @@ def _get_table():
     dynamodb = session.resource('dynamodb')
     return dynamodb.Table(parameters.get_table_name())
 
+def _backup_table(backup_name):
+    session = boto3.session.Session(profile_name=parameters.get_profile_name())
+    client = session.client('dynamodb')
+    res = client.create_backup(TableName = parameters.get_table_name(), BackupName = backup_name)
+    return res['BackupDetails']['BackupArn']
+
+def _cleanup_table_backups(backup_name):
+    session = boto3.session.Session(profile_name=parameters.get_profile_name())
+    client = session.client('dynamodb')
+    res = client.list_backups(TableName=parameters.get_table_name())
+    for bkp in res['BackupSummaries']:
+        if bkp['BackupName'] == backup_name:
+            client.delete_backup(BackupArn=bkp['BackupArn'])
+            
 def _drop_table(table_name):
     #TODO: manage Session in a better way. The table resource should be stored in the Session
     session = boto3.session.Session(profile_name=parameters.get_profile_name())
@@ -260,13 +274,19 @@ def list_secrets(domain):
         secrets.append((i['domain'],i['access']))
     return secrets
 
-def reconf_memorable(secrets, old_mem, new_mem):
+def reconf_memorable(secrets, old_mem, new_mem, backup=False):
     """Reconfigure all secrets changing the memorable password
     input:
     secrets    a list of secrets, as domain, asset pairs
     old_mem    old memorable password
     new_mem    new memorable password
+    backup     a boolean flag to request a full baclup of the table
+    output:
+    the BackupArn of the table
     """
+    arn = None
+    if backup:
+        arn =_backup_table("backup")
     for s in secrets:
         domain = s[0]
         access = s[1]
@@ -292,7 +312,8 @@ def reconf_memorable(secrets, old_mem, new_mem):
         except Exception as e:
             #TODO: add logging
             print(e)
-            print(f"Stage {stage}: Could not reconfigure ({domain},{access})")            
+            print(f"Stage {stage}: Could not reconfigure ({domain},{access})")
+        return arn            
             
     
 def count_secrets():
