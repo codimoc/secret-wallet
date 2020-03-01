@@ -24,8 +24,10 @@ MEM    = 'memorable'
 @pytest.fixture
 def set_up():
     old_input = myp.my_input
+    old_output = myp.my_output
     #mocking the user input
-    myp.my_input = lambda _:'yes'
+    myp.my_input  = lambda _:'yes'
+    myp.my_output = lambda message,_=False : print(message)
     
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path,'data','test_integration.json')
@@ -39,6 +41,7 @@ def set_up():
     yield conf_file
             
     myp.my_input = old_input
+    myp.my_oytput = old_output
     du.delete_secret(DOMAIN,ACCESS)
     parameters.clear()
     set_configuration_data(conf_data, conf_file) 

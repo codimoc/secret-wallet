@@ -30,6 +30,10 @@ PWD_NUMBERS=1  #at least one number
 PWD_SPECIAL=1  #at least one special char
 PWD_UPPER = 1  #at least an upper case
 
+LOG_FILE = f"{CONFIG_FOLDER}/secretwallet.log"
+LOG_MAX_FILE_SIZE =  1000000 #1MB
+LOG_BACKUP_COUNT  = 1        #number of rotated backup files that are retained
+
 
 #an object to store configurable parameters
 

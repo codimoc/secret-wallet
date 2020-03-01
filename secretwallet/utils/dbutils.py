@@ -10,6 +10,9 @@ from boto3.dynamodb.conditions import Key
 from datetime import datetime
 from secretwallet.constants import parameters
 from secretwallet.utils.cryptutils import encrypt, decrypt, encrypt_key
+from secretwallet.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 SEPARATOR="#-#"
 
@@ -49,7 +52,7 @@ def has_table(table_name):
         return table_name in names
     except Exception as e:
         print(e)
-        #TODO: Log exception
+        logger.error(e)
         sys.exit(1)
         
 
@@ -92,11 +95,10 @@ def create_table(table_name=parameters.get_table_name()):
                 "WriteCapacityUnits": 5
             },        
         )
-    except Exception:
-        #TODO: manage exception below
-        pass
+    except Exception as e:
+        logger.error(e)
     if has_table(table_name):
-        #TODO: add logging
+        logger.info(f"Table {table_name} has been created")
         print(f"Table {table_name} has been created")
      
 
@@ -203,10 +205,12 @@ def rename_secret(domain, access, new_domain, new_access):
             table.delete_item(Key={'domain'  : domain,
                                    'access'  : access})
         except Exception as e:
-            #TODO: add logging
+            logger.error(e)
             print(e)    
     else:
-        print(f"Could not find secret ({domain},{access})")
+        message = f"Could not find secret ({domain},{access})"
+        print(message)
+        logger.error(message)
     
 def has_secret(domain, access):
     """Checks the existence of a secret
@@ -294,17 +298,19 @@ def reconf_memorable(secrets, old_mem, new_mem, backup=False):
         domain = s[0]
         access = s[1]    
         try:
-            #TODO: add logging
-            print(f"[{i}/{ns}] - Reconfiguring the secret ({domain},{access})")
+            message = f"[{i}/{ns}] - Reconfiguring the secret ({domain},{access})"
+            logger.info(message)
+            print(message)
             secret = get_secret(domain, access, old_mem)
             insert_secret("I", f"{domain}{SEPARATOR}{access}", secret['uid'],  secret['pwd'],  secret['info'], new_mem)
             rename_secret(domain, access, "D", f"{domain}{SEPARATOR}{access}")
             rename_secret("I", f"{domain}{SEPARATOR}{access}", domain, access)
             delete_secret("D", f"{domain}{SEPARATOR}{access}")
         except Exception as e:
-            #TODO: add logging
-            print(e)
-            print(f"Could not reconfigure ({domain},{access})")
+            logger.error(e)
+            message = f"Could not reconfigure ({domain},{access})" 
+            print(message)
+            logger.error(message)
     return arn
     
 def reconf_salt_key(secrets, old_mem, new_device_pwd, backup=False):
@@ -328,17 +334,19 @@ def reconf_salt_key(secrets, old_mem, new_device_pwd, backup=False):
         domain = s[0]
         access = s[1]    
         try:
-            #TODO: add logging
-            print(f"[{i}/{ns}] - Reconfiguring the secret ({domain},{access})")
+            message = f"[{i}/{ns}] - Reconfiguring the secret ({domain},{access})"
+            logger.info(message)
+            print(message)
             secret = get_secret(domain, access, old_mem)
             insert_secret("I", f"{domain}{SEPARATOR}{access}", secret['uid'],  secret['pwd'],  secret['info'], old_mem, ekey)
             rename_secret(domain, access, "D", f"{domain}{SEPARATOR}{access}")
             rename_secret("I", f"{domain}{SEPARATOR}{access}", domain, access)
             delete_secret("D", f"{domain}{SEPARATOR}{access}")
         except Exception as e:
-            #TODO: add logging
-            print(e)
-            print(f"Could not reconfigure ({domain},{access})")
+            logger.error(e)
+            message = f"Could not reconfigure ({domain},{access})" 
+            print(message)
+            logger.error(message)
         
     return arn                
             

@@ -1,7 +1,10 @@
 from getpass import getpass
 from password_strength import PasswordPolicy
 from secretwallet.constants import PWD_LENGTH, PWD_NUMBERS, PWD_SPECIAL, PWD_UPPER, PWD_ATTEMPTS
+from secretwallet.utils.logging import get_logger
 import secretwallet.session.client as sc
+
+logger = get_logger(__name__)
 
 __policy = PasswordPolicy.from_names(length  = PWD_LENGTH,
                                    uppercase = PWD_UPPER,
@@ -24,7 +27,7 @@ def explain(pwd):
 
 def get_password(prompt, attempts):
     num_attempts = attempts
-    while num_attempts >0:
+    while num_attempts >0: 
         print(f"*** {num_attempts} attempts left ***")
         p1 = getpass(f"{prompt}-First entry  :")
         explanation = explain(p1)
@@ -34,11 +37,15 @@ def get_password(prompt, attempts):
             continue
         p2 = getpass(f"{prompt}-Verification :")
         if p1 != p2:
-            print("The two passwords are different, try again")
+            message = "The two passwords are different, try again"
+            print(message)
+            logger.error(message)
             num_attempts -= 1
             continue
         return p1 
-    print("Too many attempts at entering a valid password. Goodbye!")
+    message = "Too many attempts at entering a valid password. Goodbye!" 
+    print(message)
+    logger.error(message)
     exit(1)
     
 def get_password_untested(prompt):

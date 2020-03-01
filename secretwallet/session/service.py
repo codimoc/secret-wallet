@@ -4,6 +4,9 @@ from multiprocessing import Process
 from multiprocessing.connection import Client, Listener
 from time import sleep
 from secretwallet.constants import parameters
+from secretwallet.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def session_listener(seed, timeout):
@@ -11,8 +14,7 @@ def session_listener(seed, timeout):
     input: seed    the initial value stored in the session
            timeout the validity period of the session value (in seconds 
     """
-    #TODO: replace with logging
-    print("Listener starts")
+    logger.info("Listener starts")
     serv = Listener(parameters.get_session_address(), authkey=parameters.get_session_connection_password())
     serv.password = seed
     serv.pwd_timeout = timeout
@@ -36,27 +38,23 @@ def session_listener(seed, timeout):
                     serv.password =  None
                     conn.send({'status':'stale','password':None})
             elif 'action' in req and req['action'] == 'stop':
-                #TODO: replace with logging
-                print("Goodbye from listener")
+                logger.info("Goodbye from listener")
                 conn.send({'status':'terminated','password':None})
                 break
             else:
                 conn.send({'status':'bad command','password':None})
-    #TODO: replace with logging
-    print("Listener ends")
+    logger.info("Listener ends")
             
 
 def session_sweeper(lifetime):
     "The process that will kill the session daemon eventually"
-    #TODO: replace with logging
-    print("sweeper starts")
+    logger.info("sweeper starts")
     sleep(lifetime)
     conn = Client(parameters.get_session_address(), authkey=parameters.get_session_connection_password())    
     conn.send({'action':'stop','password':None})
     ret = conn.recv()
-    #TODO: replace with logging
-    print(ret['status'])
-    print("sweeper ends")
+    logger.debug(ret['status'])
+    logger.info("sweeper ends")
             
 def my_session(value, lifetime, timeout):
     p = Process(target=session_sweeper, args=(lifetime,))           
