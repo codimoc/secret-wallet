@@ -25,11 +25,12 @@ Data can be encrypted on a hard drive, but the disk can fail, the phone can be s
 *  [syntax](#syntax)
 *  [usage](#usage)
 *  [the secret wallet session](#session)
-*  [manual customisation](#customization)
+*  [customization of parameters](#customization)
 *  [reconfiguration](#reconfiguration)
 *  [work in progress](#work)
 *  [help needed](#help)
 *  [FAQ](#faq)
+*  [Release Notes](Release+Notes)
 
 ## <a id="motivations"></a>Motivations
 
@@ -109,7 +110,7 @@ The installation is done with:
 
     pip install secret-wallet-codimoc 
 
-After installing all the dependencies from other python packages,  it produce twos new executable scripts:
+After installing all the dependencies from other python packages,  it produce two new executable scripts:
 *   **secret_wallet** for the command line management of the secret wallet and
 *   **secret_wallet_conf** for the first time configuration as described below
 
@@ -121,12 +122,13 @@ It is divided into two separate steps, each of which can be skipped. Skipping a 
 
 These steps are:
 *   Storing the **AWS credentials**: this results in creating or modifying the *credentials* file in the *.aws*  directory, located in the user home directory. This file is typically divided into separate sections. This allows to persist  different connections to different services on the Amazon cloud. The section relevant to the **secret-wallet** is market with the heading [secret-wallet].
-*   Storing the **secret wallet configuration**: this step persists the information in the *secretwallet.json* file in the *.secretwallet* directory, located in the user home directory. This configuration file is used to store the device encryption key, the name of the AWS connection profile and the table name where the secrets are stored. This file is also used to store customisation parameters as described in [this section](#customisation).  
+*   Storing the **secret wallet configuration**: this step persists the information in the *secretwallet.json* file in the *.secretwallet* directory, located in the user home directory. This configuration file is used to store the device encryption key, the name of the AWS connection profile and the table name where the secrets are stored. This file is also used to store customization parameters as described in [this section](#customization).  
 
 When questions are asked during the configuration, please type the first letter of the answer (e.g. *s* for *skip*) to select that choice. Whenever a default value is suggested, simply hit the *Return* button to confirm that choice.  
 
 ## <a id="passwords"></a>Password strength
-Strong passwords are required by this application, Whenever a new password is needed, two verifications are performed:
+Strong passwords are required by this application.
+Whenever a new password is needed, two verification steps are performed:
 *   verify that the password is strong
 *   verify that the password is correctly typed, by re-entering it a second time.
 
@@ -140,7 +142,7 @@ Only two different passwords are ever required: the configuration password to pr
 
 The first password for the **device encryption key** will be used only when configuring the device, but must be remembered when configuring additional devices. Different configuration keys will result in an **InvalidToken** error when retrieving secrets saved by a different device.
   
-The **memorable password** is used whenever saving or retrieving secrets. This password should always be the same, and can only be changed by performing a full [reconfiguration process](reconfiguration). To prevent retyping this password many times over, a session is opened and run in the background to remember the password for a short period of time. This will be discussed in [this section](#session). 
+The **memorable password** is used whenever saving or retrieving secrets. This password should always be the same, and can only be changed by performing a full [reconfiguration process](reconfiguration). To prevent retyping this password many times over, a session is opened and it runs in the background keeping track of the password for a short period of time. This will be discussed in [this section](#session). 
 
 ## <a id="syntax"></a>Syntax
 The syntax of the **secret_wallet** script is:
@@ -169,7 +171,7 @@ To avoid possible errors, please remember to enclose the textual arguments withi
 
 
 ## <a id="usage"></a>Usage
-As mentioned above, in the early releases the interaction with the secret wallet is limited to the command line interface. A typical user would add secrets, retrieve secrets and look at a list of secrets stored in the remote wallet. 
+As mentioned above, in the early releases of this application the interaction with the secret wallet is limited to the command line interface. A typical user would add secrets, retrieve secrets and look at a list of secrets stored in the remote wallet. 
 
 Let's consider a realistic example: the energy provider *Smart Energy Ltd* provides both gas and electricity to our customer. It provides a single access through their web portal, to manage both the gas and electricity accounts. It requires a normal access with a login and password, and gives some customer's support through a telephone hot-line. In summary:
 
@@ -233,35 +235,29 @@ At this stage it is interesting to compare with what stored remotely. After logg
 ## <a id="session"></a>The secret-wallet session
 When many secrets  need to be inserted sequentially, it is very tiring to type the memorable password twice for each insertion with the *set* command. For this reason two background processes are started when the first password is entered. 
 
-The first process keeps the memorable password alive for a short period of time, so that reiterated insertions or retrievals within this period don't require the re-insertion of the same password. The default **timeout** is of 60 seconds but can be customised manually as described in the [next section](#customisation). After the timeout period lapses, this process is kept alive but the password is forgotten until the next password request.
+The first process keeps the memorable password alive for a short period of time, so that reiterated insertions or retrievals within this period don't require the re-insertion of the same password. The default **timeout** is of 60 seconds but can be customized manually as described in the [next section](#customization). After the timeout period lapses, this process is kept alive but the password is forgotten until the next password request.
 
-The second process has a **lifetime** of 10 minutes, which is also manually customisable with a different value. This process' task is to kill the first process when the lifetime has expired. At the end, both processes are terminated, only to be restarted at the next password request.
+The second process has a **lifetime** of 10 minutes, which is also manually customizable with a different value. This process' task is to kill the first process when the lifetime has expired. At the end, both processes are terminated, only to be restarted at the next password request.
 
 
-## <a id="customisation"></a>Manual customisation of parameters
-The current version of **secret wallet** does not have a command to reconfigure the default parameters, like the session timeout and lifetime, or the policy for the password strength. This will come in the next releases. In the meantime, two of these parameters can be set manually by adding a couple of entries in the configuration file *<home>/.secretwallet/secretwallet.json*. For example, assuming that the current file looks like this:
+## <a id="customization"></a>Customization of parameters
+The application's custom parameters, like the device key, the aws profile name and the table name, are serialized in the json file located with path *home/.secretwallet/secretwallet.json*, where *home* is the path to the home directory.
+Most of these parameters are set only once when configuring the system for [the first time](#configuration).
+However this file can also be used to store custom parameters that modify the behavior of the application. In particular the timeout and the lifetime of the [session for the memorable password](#session) can be changed and persisted in this file. This can be done using the **conf** command with the option *-to* (timeout) and *-lf* (lifetime) as below:
 
-    {"key": "xyxyyxyxyxxyyxyxxyyy123",
-     "profile": "secret-wallet",
-     "table_name": "test"}
-   
-By expressing the timeout and lifetime in *seconds*, one could have 30s timeout and 2mins lifetime by adding these extra fields to the file:
- 
-    {"key": "xyxyyxyxyxxyyxyxxyyy123",
-     "profile": "secret-wallet",
-      "table_name": "test",
-      "session_timeout": 30,
-      "session_lifetime" : 120}
-    
+        secret_wallet conf -to 30 -lf 120
+
+where the values are in seconds, *i.e.* timeout of 30 seconds and a lifetime of 2 minutes.
+     
 ## <a id="reconfiguration"></a>Reconfiguration
-This feature is not yet present in the current version. It is an important feature that will be added very soon. It refers to the need of re-encrypting all secrets if either the memorable password, the configuration password or both are changed. All secrets will need to be retrieved using the old passwords and re-encrypted with the new ones.
+The reconfiguration process allows the re-encryption of all existing secrets when the device password or the memorable password are changed. In this scenario all secrets need to be retrieved, decrypted and re-encrypted with the new key(s). This can be done with the **reconf** command, with optional parameters set to *-d* for a change of device password, and to *-m* for a change of memorable password.
 
+When this action is performed, a backup copy of the table containing the secrets is stored on the cloud. This can be used to restore the state of the table later on, if a roll-back is required.
+ 
 ## <a id="work"></a>Work in progress
 Coming soon, in the next releases, there will be some feature improvements and fixes, like:
-*   customisation and parameter configuration via command line,
-*   reconfiguration process when all secrets need re-encryption because of change of passwords,
+
 *   adding new commands to the command line interface, like query capabilities,
-*   adding a logging layer,
 *   adding batch processing of secrets' insertion
 *   required bug fixes.
 
