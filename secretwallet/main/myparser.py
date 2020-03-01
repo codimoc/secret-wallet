@@ -8,7 +8,9 @@ import argparse
 import sys
 import pkg_resources as pkg
 from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets,\
-                                       update_secret, delete_secret, delete_secrets, rename_secret
+                                       update_secret, delete_secret, delete_secrets, rename_secret,\
+                                       reconf_memorable, reconf_salt_key
+from secretwallet.utils.cryptutils import encrypt_key                                    
 from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
 from secretwallet.constants import parameters
 from secretwallet.session.service import start_my_session
@@ -242,7 +244,54 @@ secretwallet <command> -h
             else:
                 pass
         except Exception as e:
-            my_output(repr(e))                                
+            my_output(repr(e))
+            
+    def reconf(self):
+        parser = argparse.ArgumentParser(
+            description='Change the secret encryption because of a change of memorable or device password',
+            prog='secretwallet reconf')
+        #optional arguments
+        parser.add_argument('-m',
+                            '--memorable',
+                            action = 'store_true',
+                            default = False,
+                            help='Reconfigure secrets because of a change of memorable password')
+        parser.add_argument('-d',
+                            '--device',
+                            action = 'store_true',
+                            default = False,
+                            help='Reconfigure secrets because of a change of device password')        
+        args = parser.parse_args(sys.argv[2:])
+        my_output('Running reconf with arguments %s' % args)
+        try:
+            if args.memorable:
+                if is_connected():
+                    stop_service()
+                display_reconfiguration_warning()
+                
+                my_output('***Enter the existing memorable password***')
+                old_memorable, _ = pm.get_memorable_password(False)                
+                my_output('***Set the new memorable password***')
+                new_memorable, _ = pm.get_memorable_password(True)
+                reconf_memorable(list_secrets(None), old_memorable, new_memorable, True)
+            elif args.device:
+                if is_connected():
+                    stop_service()
+                display_reconfiguration_warning()
+                
+                my_output('***Enter the existing memorable password***')
+                old_memorable, _ = pm.get_memorable_password(False)                
+                my_output('***Set the new device password***')
+                new_device, _ = pm.get_memorable_password(True)
+                reconf_salt_key(list_secrets(None), old_memorable, new_device, True)
+                
+                #now pass it to the configuration file
+                ekey = encrypt_key(new_device)
+                cdata = get_configuration()
+                cdata['key'] = ekey
+                set_configuration_data(cdata)                                
+        except Exception as e:
+            my_output(repr(e))                                            
         
     def help(self):
         self._parser.print_help()
@@ -305,9 +354,32 @@ secretwallet <command> -h
                 if is_connected():
                     my_output('connected')
                 else:
-                    my_output('not connected')                
+                    my_output('not connected') 
         except Exception as e:
-            my_output(repr(e))                           
+            my_output(repr(e))
+            
+def display_reconfiguration_warning():
+    "Display a warning when reconfiguring the system"
+    print("*******************************************************************")
+    print("""
+  You are performing a reconfiguration of the secrets' remote 
+  table. This is because you are either changing the memorable-
+  or the device password. This will result in all of your
+  secrets being re-encrypted with the new password. You will
+  not be able to retrieve them with the old keys.
+  This operation takes time, depending on how large is the
+  table. Be patient!
+  A backup of the original table is performed, in case you need 
+  to roll back the table.
+  You can manage your time-stamped backups from the AWS
+  Management console or using the secret-wallet command line.
+          """)
+    print("*******************************************************************") 
+    answ = input("\nDo you want to go ahead? (yes|no) ")
+    if answ.lower().startswith('y'):
+        return
+    else:
+        exit(1)                          
             
             
 def display_secret(secret):

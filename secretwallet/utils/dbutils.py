@@ -9,7 +9,7 @@ import sys
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
 from secretwallet.constants import parameters
-from secretwallet.utils.cryptutils import encrypt, decrypt
+from secretwallet.utils.cryptutils import encrypt, decrypt, encrypt_key
 
 SEPARATOR="#-#"
 
@@ -285,35 +285,62 @@ def reconf_memorable(secrets, old_mem, new_mem, backup=False):
     the BackupArn of the table
     """
     arn = None
+    ns = len(secrets)
+    i = 0
     if backup:
         arn =_backup_table("backup")
     for s in secrets:
+        i+=1
         domain = s[0]
-        access = s[1]
-        stage = 0    
+        access = s[1]    
         try:
             #TODO: add logging
-            print(f"Stage {stage}: Retrieving secret ({domain},{access}")
+            print(f"[{i}/{ns}] - Reconfiguring the secret ({domain},{access})")
             secret = get_secret(domain, access, old_mem)
-            stage = 1
-            print(f"Stage {stage}: Tagging for insertion reconfigured secret ({domain},{access})")
             insert_secret("I", f"{domain}{SEPARATOR}{access}", secret['uid'],  secret['pwd'],  secret['info'], new_mem)
-            stage = 2
-            print(f"Stage {stage}: Tagging for deletion secret ({domain},{access})")
             rename_secret(domain, access, "D", f"{domain}{SEPARATOR}{access}")
-            stage = 3
-            print(f"Stage {stage}: Inserting reconfigured secret ({domain},{access})")
             rename_secret("I", f"{domain}{SEPARATOR}{access}", domain, access)
-            stage = 4
-            print(f"Stage {stage}: Removing ols secret ({domain},{access})")
             delete_secret("D", f"{domain}{SEPARATOR}{access}")
-            stage = 5
-            print(f"Stage {stage}: Completed reconfiguring secret ({domain},{access})")
         except Exception as e:
             #TODO: add logging
             print(e)
-            print(f"Stage {stage}: Could not reconfigure ({domain},{access})")
-        return arn            
+            print(f"Could not reconfigure ({domain},{access})")
+    return arn
+    
+def reconf_salt_key(secrets, old_mem, new_device_pwd, backup=False):
+    """Reconfigure all secrets changing the memorable password
+    input:
+    secrets         a list of secrets, as domain, asset pairs
+    old_mem         old memorable password
+    new_device_pwd  the new device password
+    backup          a boolean flag to request a full baclup of the table
+    output:
+    the BackupArn of the table
+    """
+    ekey = encrypt_key(new_device_pwd)
+    ns = len(secrets)
+    i = 0    
+    arn = None
+    if backup:
+        arn =_backup_table("backup")
+    for s in secrets:
+        i += 1
+        domain = s[0]
+        access = s[1]    
+        try:
+            #TODO: add logging
+            print(f"[{i}/{ns}] - Reconfiguring the secret ({domain},{access})")
+            secret = get_secret(domain, access, old_mem)
+            insert_secret("I", f"{domain}{SEPARATOR}{access}", secret['uid'],  secret['pwd'],  secret['info'], old_mem, ekey)
+            rename_secret(domain, access, "D", f"{domain}{SEPARATOR}{access}")
+            rename_secret("I", f"{domain}{SEPARATOR}{access}", domain, access)
+            delete_secret("D", f"{domain}{SEPARATOR}{access}")
+        except Exception as e:
+            #TODO: add logging
+            print(e)
+            print(f"Could not reconfigure ({domain},{access})")
+        
+    return arn                
             
     
 def count_secrets():

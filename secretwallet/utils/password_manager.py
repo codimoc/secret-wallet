@@ -47,7 +47,7 @@ def get_password_untested(prompt):
 def get_memorable_password(tested = False):
     """Get the memorable password, either from the live session or from the client prompt.
     input:
-    tested    a b boolean flag. If true then the password strength is ensured 
+    tested    a boolean flag. If true then the password strength is ensured 
               and the password is checked against a second entry
     output:
     return a pair of values (memorable, need_session) where memorable is the

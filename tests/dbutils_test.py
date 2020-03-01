@@ -342,3 +342,22 @@ def test_reconf_memorable_with_backup(set_up, insert_records, cleanup_backups):
         arn = du.reconf_memorable(secrets, old_mem, new_mem, True)
         assert arn is not None
         
+def test_reconf_salt_key(set_up, insert_records):
+        old_mem = "memorable"
+        c_pwd = 'carpiato'
+        new_salt_key = cu.encrypt_key(c_pwd)
+        secrets = list_secrets("d1") + list_secrets("d2")
+        assert 3 == len(secrets)
+        sec = du.get_secret('d1', 'a1', old_mem)
+        assert "v1" == sec['info']['k1']
+        
+        du.reconf_salt_key(secrets, old_mem, c_pwd, False)
+        secrets = list_secrets("d1") + list_secrets("d2")        
+        assert 3 == len(secrets)
+        secrets = list_secrets("I") + list_secrets("D")
+        assert 0 == len(secrets)
+        sec = du.get_secret('d1', 'a1', old_mem, new_salt_key)
+        assert "v1" == sec['info']['k1']
+        
+        with pytest.raises(cryptography.fernet.InvalidToken):
+            du.get_secret('d1', 'a1', old_mem)
