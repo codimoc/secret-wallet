@@ -276,6 +276,8 @@ def list_secrets(domain):
         resp = _get_table().scan()
     for i in resp['Items']:
         secrets.append((i['domain'],i['access']))
+    #sort the list
+    secrets.sort(key=lambda x: x[0]+x[1])
     return secrets
 
 def reconf_memorable(secrets, old_mem, new_mem, backup=False):
