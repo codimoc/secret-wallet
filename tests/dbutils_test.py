@@ -3,7 +3,6 @@ import cryptography
 import secretwallet.utils.cryptutils as cu
 import secretwallet.utils.dbutils as du 
 from secretwallet.constants import parameters
-from build.lib.secretwallet.utils.dbutils import list_secrets
 
 @pytest.fixture
 def set_up():
@@ -27,7 +26,7 @@ def insert_records():
     
     du.delete_secrets(du.list_secrets("d1"))
     du.delete_secrets(du.list_secrets("d2"))
-    
+        
 @pytest.fixture
 def cleanup_backups():
     pass
@@ -316,48 +315,74 @@ def test_rename_secret(set_up):
         du.delete_secret(new_domain, new_access)
         
 def test_reconf_memorable(set_up, insert_records):
-        old_mem = "memorable"
-        new_mem = 'another'
-        secrets = list_secrets("d1") + list_secrets("d2")
-        assert 3 == len(secrets)
-        sec = du.get_secret('d1', 'a1', old_mem)
-        assert "v1" == sec['info']['k1']
-        
-        du.reconf_memorable(secrets, old_mem, new_mem)
-        secrets = list_secrets("d1") + list_secrets("d2")        
-        assert 3 == len(secrets)
-        secrets = list_secrets("I") + list_secrets("D")
-        assert 0 == len(secrets)
-        sec = du.get_secret('d1', 'a1', new_mem)
-        assert "v1" == sec['info']['k1']
-        
-        with pytest.raises(cryptography.fernet.InvalidToken):
-            du.get_secret('d1', 'a1', old_mem)
+    old_mem = "memorable"
+    new_mem = 'another'
+    secrets = du.list_secrets("d1") + du.list_secrets("d2")
+    assert 3 == len(secrets)
+    sec = du.get_secret('d1', 'a1', old_mem)
+    assert "v1" == sec['info']['k1']
+    
+    du.reconf_memorable(secrets, old_mem, new_mem)
+    secrets = du.list_secrets("d1") + du.list_secrets("d2")        
+    assert 3 == len(secrets)
+    secrets = du.list_secrets("I") + du.list_secrets("D")
+    assert 0 == len(secrets)
+    sec = du.get_secret('d1', 'a1', new_mem)
+    assert "v1" == sec['info']['k1']
+    
+    with pytest.raises(cryptography.fernet.InvalidToken):
+        du.get_secret('d1', 'a1', old_mem)
             
 def test_reconf_memorable_with_backup(set_up, insert_records, cleanup_backups):
-        old_mem = "memorable"
-        new_mem = 'another'
-        secrets = list_secrets("d1") + list_secrets("d2")
-        assert 3 == len(secrets)
-        arn = du.reconf_memorable(secrets, old_mem, new_mem, True)
-        assert arn is not None
+    old_mem = "memorable"
+    new_mem = 'another'
+    secrets = du.list_secrets("d1") + du.list_secrets("d2")
+    assert 3 == len(secrets)
+    arn = du.reconf_memorable(secrets, old_mem, new_mem, True)
+    assert arn is not None
         
 def test_reconf_salt_key(set_up, insert_records):
-        old_mem = "memorable"
-        c_pwd = 'carpiato'
-        new_salt_key = cu.encrypt_key(c_pwd)
-        secrets = list_secrets("d1") + list_secrets("d2")
-        assert 3 == len(secrets)
-        sec = du.get_secret('d1', 'a1', old_mem)
-        assert "v1" == sec['info']['k1']
-        
-        du.reconf_salt_key(secrets, old_mem, c_pwd, False)
-        secrets = list_secrets("d1") + list_secrets("d2")        
-        assert 3 == len(secrets)
-        secrets = list_secrets("I") + list_secrets("D")
-        assert 0 == len(secrets)
-        sec = du.get_secret('d1', 'a1', old_mem, new_salt_key)
-        assert "v1" == sec['info']['k1']
-        
-        with pytest.raises(cryptography.fernet.InvalidToken):
-            du.get_secret('d1', 'a1', old_mem)
+    old_mem = "memorable"
+    c_pwd = 'carpiato'
+    new_salt_key = cu.encrypt_key(c_pwd)
+    secrets = du.list_secrets("d1") + du.list_secrets("d2")
+    assert 3 == len(secrets)
+    sec = du.get_secret('d1', 'a1', old_mem)
+    assert "v1" == sec['info']['k1']
+    
+    du.reconf_salt_key(secrets, old_mem, c_pwd, False)
+    secrets = du.list_secrets("d1") + du.list_secrets("d2")        
+    assert 3 == len(secrets)
+    secrets = du.list_secrets("I") + du.list_secrets("D")
+    assert 0 == len(secrets)
+    sec = du.get_secret('d1', 'a1', old_mem, new_salt_key)
+    assert "v1" == sec['info']['k1']
+    
+    with pytest.raises(cryptography.fernet.InvalidToken):
+        du.get_secret('d1', 'a1', old_mem)
+            
+def test_query_records(set_up, insert_records):
+    #test with no filter
+    ns = du.count_secrets()
+    secrets = du.query_secrets(None, None)
+    assert ns == len(secrets)
+    
+    #test filter on domain with a d   
+    secrets = du.query_secrets("d", None)
+    assert 3 == len(secrets)
+    
+    #tets filter on domain with a 1
+    secrets = du.query_secrets("1", None)
+    assert 2 == len(secrets)
+    
+    #test filter domain with an x
+    secrets = du.query_secrets("x", None)
+    assert 0 == len(secrets)
+    
+    #test filter on access with a 1 in it
+    secrets = du.query_secrets(None, "1")
+    assert 1 == len(secrets)
+    
+    #test on both
+    secrets = du.query_secrets("1", "2")
+    assert 1 == len(secrets)    

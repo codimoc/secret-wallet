@@ -278,8 +278,23 @@ def list_secrets(domain):
         secrets.append((i['domain'],i['access']))
     #sort the list
     secrets.sort(key=lambda x: x[0]+x[1])
+    
     return secrets
 
+def query_secrets(domain_sub, access_sub):
+    """Query all secrets with domain and access containing the domain or access substrings
+    input:
+    domain_sub  the substring to be looked for in the domain keys
+    access_sub  the substring to be looked for in the access keys
+    output:
+    a list of (domain, access) tuples
+    """
+    secrets = list_secrets(None)
+    filter_secrets = lambda s:(domain_sub is None or domain_sub.lower() in s[0].lower())\
+                               and\
+                               (access_sub is None or access_sub.lower() in s[1].lower())
+    return [s for s in secrets if filter_secrets(s)]
+    
 def reconf_memorable(secrets, old_mem, new_mem, backup=False):
     """Reconfigure all secrets changing the memorable password
     input:
