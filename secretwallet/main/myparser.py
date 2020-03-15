@@ -9,7 +9,7 @@ import sys
 import pkg_resources as pkg
 from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets,\
                                        update_secret, delete_secret, delete_secrets, rename_secret,\
-                                       reconf_memorable, reconf_salt_key
+                                       reconf_memorable, reconf_salt_key, query_secrets
 from secretwallet.utils.cryptutils import encrypt_key
 from secretwallet.utils.logging import get_logger                                    
 from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
@@ -206,6 +206,27 @@ secretwallet <command> -h
             display_list("List of secrets", secrets)
         except Exception as e:
             my_output(repr(e))
+            
+    def query(self):
+        parser = argparse.ArgumentParser(
+            description='Query or filter the list of secrets by domain or access name',
+            prog='secretwallet query')
+        #optional arguments
+        parser.add_argument('-d',
+                            '--domain',
+                            default=None,
+                            help='A substring to query the domains. Only secrets with this substring in their domain are returned')
+        parser.add_argument('-a',
+                            '--access',
+                            default=None,
+                            help='A substring to query the access. Only secrets with this substring in their access are returned')        
+        args = parser.parse_args(sys.argv[2:])
+        my_output('Query secrets with arguments %s' % args)
+        try:
+            secrets = query_secrets(args.domain, args.access)
+            display_list("List of secrets", secrets)
+        except Exception as e:
+            my_output(repr(e))            
             
     def conf(self):
         parser = argparse.ArgumentParser(
