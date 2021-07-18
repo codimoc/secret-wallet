@@ -1,5 +1,5 @@
 ## Warning
-This application was written and designed for Linux, and it is not currently supported on Windows systems. A Docker image for this application in in scope for later releases. This will solve this multi-platform portability issue.
+This application was written and designed for Linux, and it is not currently supported on Windows systems. A Docker image for this application in in scope for later releases. This will solve this portability issue.
 
 ## Introduction
 Like many wallet applications, this Python-based utility addresses the requirement of having a single point of access for the large amount
