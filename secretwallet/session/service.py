@@ -6,14 +6,13 @@ from time import sleep
 from secretwallet.constants import parameters
 from secretwallet.utils.logging import get_logger
 
-logger = get_logger(__name__)
-
 
 def session_listener(seed, timeout):
     """ Session service function with an initial value as a seed
     input: seed    the initial value stored in the session
            timeout the validity period of the session value (in seconds 
     """
+    logger = get_logger(__name__)
     logger.info("Listener starts")
     serv = Listener(parameters.get_session_address(), authkey=parameters.get_session_connection_password())
     serv.password = seed
@@ -48,6 +47,7 @@ def session_listener(seed, timeout):
 
 def session_sweeper(lifetime):
     "The process that will kill the session daemon eventually"
+    logger = get_logger(__name__)
     logger.info("sweeper starts")
     sleep(lifetime)
     conn = Client(parameters.get_session_address(), authkey=parameters.get_session_connection_password())    
