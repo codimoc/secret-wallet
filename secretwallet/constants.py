@@ -1,6 +1,10 @@
 import json
 from os.path import expanduser, exists
-HOME_FOLDER = expanduser("~")
+
+if 'HOME_DIR' in globals():
+    HOME_FOLDER = eval('HOME_DIR')
+else:
+    HOME_FOLDER = expanduser("~")
 
 
 CONFIG_FOLDER = f"{HOME_FOLDER}/.secretwallet"
