@@ -7,3 +7,4 @@ dist/
 .eggs/
 .secrets/
 .tox
+/.pytest_cache/
