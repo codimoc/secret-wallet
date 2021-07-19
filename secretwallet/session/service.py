@@ -1,8 +1,9 @@
-import daemon
 import datetime
 from multiprocessing import Process
 from multiprocessing.connection import Client, Listener
 from time import sleep
+
+import daemon
 from secretwallet.constants import parameters
 from secretwallet.utils.logging import get_logger
 
@@ -12,8 +13,7 @@ def session_listener(seed, timeout):
     input: seed    the initial value stored in the session
            timeout the validity period of the session value (in seconds 
     """
-    logger = get_logger(__name__)
-    logger.info("Listener starts")
+    get_logger(__name__).info("Listener starts")
     serv = Listener(parameters.get_session_address(), authkey=parameters.get_session_connection_password())
     serv.password = seed
     serv.pwd_timeout = timeout
@@ -37,24 +37,23 @@ def session_listener(seed, timeout):
                     serv.password =  None
                     conn.send({'status':'stale','password':None})
             elif 'action' in req and req['action'] == 'stop':
-                logger.info("Goodbye from listener")
+                get_logger(__name__).info("Goodbye from listener")
                 conn.send({'status':'terminated','password':None})
                 break
             else:
                 conn.send({'status':'bad command','password':None})
-    logger.info("Listener ends")
+    get_logger(__name__).info("Listener ends")
             
 
 def session_sweeper(lifetime):
     "The process that will kill the session daemon eventually"
-    logger = get_logger(__name__)
-    logger.info("sweeper starts")
+    get_logger(__name__).info("sweeper starts")
     sleep(lifetime)
     conn = Client(parameters.get_session_address(), authkey=parameters.get_session_connection_password())    
     conn.send({'action':'stop','password':None})
     ret = conn.recv()
-    logger.debug(ret['status'])
-    logger.info("sweeper ends")
+    get_logger(__name__).debug(ret['status'])
+    get_logger(__name__).info("Sweeper ends")
             
 def my_session(value, lifetime, timeout):
     p = Process(target=session_sweeper, args=(lifetime,))           

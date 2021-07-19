@@ -6,17 +6,20 @@ Created on 1 Jan 2020
 
 import argparse
 import sys
-import pkg_resources as pkg
-from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets,\
-                                       update_secret, delete_secret, delete_secrets, rename_secret,\
-                                       reconf_memorable, reconf_salt_key, query_secrets
-from secretwallet.utils.cryptutils import encrypt_key
-from secretwallet.utils.logging import get_logger                                    
-from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
+
 from secretwallet.constants import parameters
-from secretwallet.session.service import start_my_session
+from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
+from secretwallet.session.service import start_my_session
+from secretwallet.utils.cryptutils import encrypt_key
+from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets, \
+                                       update_secret, delete_secret, delete_secrets, rename_secret, \
+                                       reconf_memorable, reconf_salt_key, query_secrets
+from secretwallet.utils.logging import get_logger                                    
+
+import pkg_resources as pkg
 import secretwallet.utils.password_manager as pm
+
 
 logger = get_logger(__name__)
 
@@ -365,7 +368,7 @@ secretwallet <command> -h
         my_output('Starting a secret wallet client with parameters %s'%args)
         try:
             if args.action == 'get':
-                my_output(get_session_password())
+                my_output(get_session_password()) #TODO: hide the password from the log
             elif args.action == 'set':
                 set_session_password(args.value)
             elif args.action == 'stop':
