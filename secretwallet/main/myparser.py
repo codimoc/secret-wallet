@@ -90,7 +90,7 @@ secretwallet <command> -h
                             '--info_value',
                             help='The value in an information map')                       
         args = parser.parse_args(sys.argv[2:])
-        my_output('Running set with arguments %s' % args)
+        my_output('Running set for domain %s and access %s' %(args.domain,args.access))
         if args.info_key is None or args.info_value is None:
             info = None
         else:
@@ -286,7 +286,7 @@ secretwallet <command> -h
                             default = False,
                             help='Reconfigure secrets because of a change of device password')        
         args = parser.parse_args(sys.argv[2:])
-        my_output('Running reconf with arguments %s' % args)
+        my_output('Running reconf for domain %s and access %s' %(args.domain,args.access))
         try:
             if args.memorable:
                 if is_connected():
@@ -368,7 +368,7 @@ secretwallet <command> -h
         my_output('Starting a secret wallet client with parameters %s'%args)
         try:
             if args.action == 'get':
-                my_output(get_session_password()) #TODO: hide the password from the log
+                my_output((get_session_password()[0],'***'))
             elif args.action == 'set':
                 set_session_password(args.value)
             elif args.action == 'stop':
