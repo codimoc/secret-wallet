@@ -3,8 +3,7 @@ from multiprocessing import Process
 from multiprocessing.connection import Client, Listener
 from time import sleep
 
-import daemon
-from secretwallet.constants import parameters
+from secretwallet.constants import parameters, is_posix
 from secretwallet.utils.logging import get_logger
 
 
@@ -67,7 +66,11 @@ def my_session(value, lifetime, timeout):
     p.join()
     q.join()
     
-def start_my_session(value, lifetime, timeout):             
-    with daemon.DaemonContext():
-        my_session(value, lifetime, timeout)        
+def start_my_session(value, lifetime, timeout):
+    if is_posix():
+        import daemon             
+        with daemon.DaemonContext():
+            my_session(value, lifetime, timeout)
+    else: #Windows or other system don't support daemons in the way required
+        pass        
     

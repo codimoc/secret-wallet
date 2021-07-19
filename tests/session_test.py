@@ -1,8 +1,10 @@
-import pytest
-from secretwallet.session.service import my_session
-from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
 from multiprocessing import Process
 from time import sleep
+
+import pytest
+from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
+from secretwallet.session.service import my_session
+
 
 @pytest.fixture
 def set_up():
@@ -17,7 +19,7 @@ def set_up():
     p.join()
 
 def test_get_password(set_up):
-    sleep(1)
+    sleep(0.5)
     assert 'message' == get_session_password()[1]
     
 def test_set_password(set_up):
@@ -44,6 +46,7 @@ def test_connection_status(set_up):
     sleep(1)
     assert is_connected()
     stop_service()
+    sleep(1)
     assert not is_connected()
     
 def test_lifetime(set_up): 

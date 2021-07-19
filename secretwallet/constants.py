@@ -1,5 +1,7 @@
 import json
+import os
 from os.path import expanduser, exists
+
 
 if 'HOME_DIR' in globals():
     HOME_FOLDER = eval('HOME_DIR')
@@ -21,7 +23,7 @@ SECRET_ACCESS_TABLE='access_secrets'
 AWS_PROFILE='secret-wallet'
 
 #session parameters
-SESSION_ADDRESS = ('',6417) #check all avaible addresses, not only localhost (for docker)
+SESSION_ADDRESS = ('localhost',6417)
 SESSION_PWD = b'yooCani3'
 SESSION_TIMEOUT  = 60  #number of second the mem password is kept fresh
 SESSION_LIFETIME = 600 #lifetime in seconds of the entire session
@@ -38,6 +40,8 @@ LOG_FILE = f"{CONFIG_FOLDER}/secretwallet.log"
 LOG_MAX_FILE_SIZE =  1000000 #1MB
 LOG_BACKUP_COUNT  = 1        #number of rotated backup files that are retained
 
+def is_posix()->bool:
+    return os.name=='posix'
 
 #an object to store configurable parameters
 
