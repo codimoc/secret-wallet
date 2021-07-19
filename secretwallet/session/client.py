@@ -6,7 +6,7 @@ logger = get_logger(__name__)
 
 def get_session_password():
     if not is_posix():
-        raise NotImplementedError("Client/Server daemons not supported on this syste,")
+        raise NotImplementedError("Client/Server daemons not supported on this system")
     logger.info("Retrieving session password")
     conn = Client(parameters.get_session_address(), authkey=parameters.get_session_connection_password())        
     conn.send({'action':'get','password':None})
