@@ -1,5 +1,6 @@
 ## Warning
-This application was written and designed for Linux, and it is not currently supported on Windows systems. A Docker image for this application in in scope for later releases. This will solve this portability issue.
+This application was written and designed for Linux and provides somewhat reduced functionalities on Windows systems. The original design aimed at a command line tool integrating inside a Linux shell like bash, with some functionalities running in the background. The background processes keep the latest password in memory for a short while, to facilitate a repeated usage. This memory functionality does not port well onto Windows platforms, and it is disabled on Windows installations. This issue will be eventually addressed in future releases with the improvement of the user interface. 
+
 
 ## Introduction
 Like many wallet applications, this Python-based utility addresses the requirement of having a single point of access for the large amount
