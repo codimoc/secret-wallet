@@ -1,8 +1,10 @@
-import pytest
 import cryptography
+import pytest
+from secretwallet.constants import parameters
+
 import secretwallet.utils.cryptutils as cu
 import secretwallet.utils.dbutils as du 
-from secretwallet.constants import parameters
+
 
 @pytest.fixture
 def set_up():
@@ -33,7 +35,7 @@ def cleanup_backups():
     yield
     
     du._cleanup_table_backups('backup')
-
+    
 
 def test_insert_delete_login(set_up):
     m_pwd = u"memorabile"
@@ -276,6 +278,8 @@ def test_delete_secrets(set_up):
     m_pwd = u"memorabile"
     domain = u"my_domain"  
     info = {'message':'secret'}
+    #cleanup
+    du.delete_secrets(du.list_secrets(None))
     cnt = du.count_secrets()
     for i in range(5):
         access = f"access_{i}"
