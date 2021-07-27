@@ -1,5 +1,5 @@
 ## Warning
-This application was written and designed for Linux and provides somewhat reduced functionalities on Windows systems. The original design aimed at a command line tool integrating inside a Linux shell like bash, with some functionalities running in the background. The background processes keep the latest password in memory for a short while, to facilitate a repeated usage. This memory functionality does not port well onto Windows platforms, and it is disabled on Windows installations. This issue will be eventually addressed in future releases with the improvement of the user interface. 
+This application was written and designed for Linux and provides somewhat reduced functionalities on Windows systems. The original design was aimed at a command line tool that integrates inside a Linux shell like bash, with some functionalities running in the background. The role of the background processes is to keep the latest password in memory for a short while, to facilitate a repeated usage. Since this memory functionality does not port well onto Windows platforms, it is currently disabled on Windows installations. This issue is in scope for future releases, with the improvement of the user interface. 
 
 
 ## Introduction
