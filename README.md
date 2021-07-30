@@ -1,3 +1,10 @@
+## Disclaimers
+
++ **Privacy disclaimer**: This application is entirely open-source and non-commercial. It is free to download and use for securing personal information. The user of this application is uniquely responsible for setting up his/her own storage account on Amazon AWS. This application is simply a tool to facilitate the communication between the user's machine and the remote store. Under no circumstances does this application have access to, collect, manage or transfer information owned by the the final user of the application. 
+
+
++ **Liability disclaimer**: This application does its best to provide means of securing data on a remote store, as explained in the documentation below. By reading this document and/or by browsing through the open source [code](https://github.com/codimoc/secret-wallet), the user will decide if this application satisfies his/her needs. By downloading and using this application the end user accepts full responsibility of any damage incurred as a consequence of the use of this application. To the maximum extent permitted by applicable law, the owner and developers of this application shall not be liable for any indirect, incidental, special, consequential or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, goodwill, or other intangible losses, resulting from the use of this application.
+
 ## Warning
 This application was written and designed for Linux and provides somewhat reduced functionalities on Windows systems. The original design was aimed at a command line tool that integrates inside a Linux shell like bash, with some functionalities running in the background. The role of the background processes is to keep the latest password in memory for a short while, to facilitate a repeated usage. Since this memory functionality does not port well onto Windows platforms, it is currently disabled on Windows installations. This issue is in scope for future releases, with the improvement of the user interface. 
 
