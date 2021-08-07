@@ -8,3 +8,4 @@ dist/
 .secrets/
 .tox
 /.pytest_cache/
+*.pyc
