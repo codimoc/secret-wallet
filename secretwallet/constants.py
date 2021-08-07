@@ -112,6 +112,27 @@ class Parameters(object):
         
     def set_session_timeout(self, timeout):
         self.__data['session_timeout'] = timeout
+
+    def set_clock_start(self, start):
+        "set the time from which password timeout starts counting down"
+        self.__data['clock_start'] = start
+
+    def get_clock_start(self):
+        "get the time from which password timeout started counting down"
+        if 'clock_start' in self.__data:
+            return self.__data['clock_start']
+        else:
+            return None
+    def set_in_shell(self, flag):
+        "set a flag to say if in shell or not"
+        self.__data['in_shell'] = flag
+
+    def is_in_shell(self):
+        "check if we are running inside a shell"
+        if "in_shell" in self.__data:
+            return self.__data['in_shell']
+        else:
+            return False
         
 
     def get_session_lifetime(self):

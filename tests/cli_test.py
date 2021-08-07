@@ -203,3 +203,9 @@ def test_wrong_memorable_password(set_up):
             assert 'InvalidToken' in buf.getvalue()
     finally:
         du.delete_secret(DOMAIN,my_access)
+
+# def test_shell_set_help(set_up):
+#     sys.argv=['secret_wallet','shell']
+#     #mocking input to pass a 'set -h' command
+#     myp.my_input = lambda _:"set -h"
+#     Parser()

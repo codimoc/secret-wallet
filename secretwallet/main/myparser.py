@@ -23,12 +23,7 @@ import secretwallet.utils.password_manager as pm
 
 logger = get_logger(__name__)
 
-class Parser(object):
-
-    def __init__(self):
-        parser = argparse.ArgumentParser(
-            description='The Secrets manager',
-            usage='''secretwallet <command> [<args>]
+usage_bash = '''secret_wallet <command> [<args>]
 
 The list of secretwallet commands are:
    set             Insert a new secret
@@ -43,15 +38,44 @@ The list of secretwallet commands are:
    client          (testing) retrieves the memorable password from the running session
    help            print the main help page
    version         the version of this package
+   shell           starts a secret_wallet sheel for interctive queries
    ....
    
 For individual help type:
 secretwallet <command> -h
-''')        
+'''
+
+usage_shell = '''<command> [<args>]
+
+The list of secretwallet commands are:
+   set             Insert a new secret
+   get             Retrieves a secret
+   delete          Remove a secret
+   rename          rename a secret
+   list            list all secrets in a given domain
+   conf            manage the configuration file
+   query           query secrets based on a condition
+   reconf          change an existing configuration
+   help            print the main help page
+   version         the version of this package
+   quit            terminate the interactive shell
+   ....
+   
+For individual help type:
+<command> -h
+'''
+
+class Parser(object):
+
+    def __init__(self):
+        parser = argparse.ArgumentParser(
+            description='The Secrets manager',
+            usage=usage_bash)        
         parser.add_argument('command',
                             action='store',
                             choices=['set','get','delete', 'rename', 'list', 'conf',
-                                     'query','reconf','help','session','client', 'version'],
+                                     'query','reconf','help','session','client',
+                                     'version', 'shell'],
                             help='Command to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
@@ -89,7 +113,11 @@ secretwallet <command> -h
         parser.add_argument('-iv',
                             '--info_value',
                             help='The value in an information map')                       
-        args = parser.parse_args(sys.argv[2:])
+
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
         my_output('Running set for domain %s and access %s' %(args.domain,args.access))
         if args.info_key is None or args.info_value is None:
             info = None
@@ -119,7 +147,11 @@ secretwallet <command> -h
                         dest='access',
                         required=True,
                         help='The sub=domain (sub-category or access) of the secret')
-        args = parser.parse_args(sys.argv[2:])
+
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
         my_output('Running get with arguments %s' % args)
         try:
             memorable, need_session = pm.get_memorable_password(False)
@@ -141,7 +173,11 @@ secretwallet <command> -h
         parser.add_argument('-a',
                             dest ='access',
                             help='The sub=domain (sub-category or access) of the secret')
-        args = parser.parse_args(sys.argv[2:])
+
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
         my_output('Running delete with arguments %s' % args)
         try:
             if args.access is not None:
@@ -175,7 +211,10 @@ secretwallet <command> -h
                             dest ='new_access',
                             default = None,
                             help='The new asset')        
-        args = parser.parse_args(sys.argv[2:])
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+        
         my_output('Running rename with arguments %s' % args)
         try:
             if args.new_domain is None and args.new_access is None:
@@ -202,7 +241,11 @@ secretwallet <command> -h
         parser.add_argument('-d',
                             '--domain',
                             help='The domain (category) of the secrets. If not given all secrets are returned')
-        args = parser.parse_args(sys.argv[2:])
+
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
         my_output('Running list with arguments %s' % args)
         try:
             secrets = list_secrets(args.domain)
@@ -223,7 +266,11 @@ secretwallet <command> -h
                             '--access',
                             default=None,
                             help='A substring to query the access. Only secrets with this substring in their access are returned')        
-        args = parser.parse_args(sys.argv[2:])
+
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
         my_output('Query secrets with arguments %s' % args)
         try:
             secrets = query_secrets(args.domain, args.access)
@@ -253,7 +300,11 @@ secretwallet <command> -h
                             type = int,
                             default = -1,
                             help='Session lifetime in seconds')                
-        args = parser.parse_args(sys.argv[2:])
+
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
         my_output('Running conf with arguments %s' % args)
         try:
             if (args.list):
@@ -285,7 +336,11 @@ secretwallet <command> -h
                             action = 'store_true',
                             default = False,
                             help='Reconfigure secrets because of a change of device password')        
-        args = parser.parse_args(sys.argv[2:])
+
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
         my_output('Running reconf for domain %s and access %s' %(args.domain,args.access))
         try:
             if args.memorable:
@@ -322,6 +377,45 @@ secretwallet <command> -h
         
     def version(self):
         print("secret-wallet-codimoc version %s"%pkg.get_distribution('secret-wallet-codimoc').version)
+
+    def shell(self):
+        parser = argparse.ArgumentParser(
+            description='Interactive secret_wallet shell',
+            prog='secret_wallet shell')
+        parser.add_argument('command',
+                            action='store',
+                            choices=['set','get','delete', 'rename', 'list', 'conf',
+                                     'query','reconf','help','session','quit'],
+                            help='Command to run inside the shell')
+        my_output('Starting a secret_wallet interactive shell. Type quit to quit, help for help')
+        parameters.set_in_shell(True)
+        while True: #this is the shell main loop
+            cmd = my_input(':> ')
+            if cmd.lower().startswith('quit'):
+                parameters.set_in_shell(False)
+                break
+            if cmd.lower().startswith('help'):
+                my_output(usage_shell)
+                continue
+            tokens = cmd.split()
+            try:
+                args = parser.parse_args(tokens[:1])
+            except SystemExit as e: #don't break the shell
+                my_output("Wrong Input command!!")
+                my_output(usage_shell)
+                continue                
+            if not hasattr(self, args.command):
+                my_output('Unrecognized command')
+                my_output(usage_shell)
+                continue
+            # use dispatch pattern to invoke method with same name
+            try:
+                sys.argv=['secret_wallet'] + tokens  #append a first argument just for padding (could be anything)
+                getattr(self, args.command)()
+            except Exception as e: #don't break the shell
+                my_output(repr(e))
+                continue                   
+            pass
                            
     def session(self):
         parser = argparse.ArgumentParser(
@@ -342,7 +436,11 @@ secretwallet <command> -h
                             dest = 'value',
                             help='The value to store in the session',
                             default='not set')                
-        args = parser.parse_args(sys.argv[2:])
+
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
         my_output('Starting a secret wallet session with parameters %s'%args)
         try:
             start_my_session(args.value, args.lifetime, args.timeout)
@@ -364,7 +462,11 @@ secretwallet <command> -h
                             dest = 'value',
                             help='The value to store in the session',
                             default='not set')                
-        args = parser.parse_args(sys.argv[2:])
+
+        args = my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+    
         my_output('Starting a secret wallet client with parameters %s'%args)
         try:
             if args.action == 'get':
@@ -457,3 +559,13 @@ def my_output(message, want_exit=False):
     print(message)
     if want_exit:
         exit(1)
+
+def my_parse(parser, args):
+    try:
+        return parser.parse_args(args)
+    except SystemExit:
+        if parameters.is_in_shell():
+            parser.print_usage()
+            return None
+        else:
+            raise 
