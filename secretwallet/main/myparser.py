@@ -423,7 +423,7 @@ def display_secret(secret):
     
     
 def display_list(message, secrets):
-    field_lenght = max([len(x[0]) for x in secrets])+5
+    field_lenght = max([len(x[0]) for x in secrets], default=0)+5
     format_header = f"<%-{field_lenght-1}s:<access>"
     format_record = f"%-{field_lenght}s:%s"
     print("**********************************************************")

@@ -68,6 +68,17 @@ def test_list(set_up):
         Parser()
         assert "<domain>" in buf.getvalue()
 
+@pytest.mark.integration
+def test_empty_list(set_up):
+    sys.argv=['secret_wallet','list','-d','xxx']
+    #output redirection to string
+    with io.StringIO() as buf, redirect_stdout(buf):
+        try:
+            Parser()
+        except:
+            assert False, "An empty list should not raise and exception when formatted"
+        assert "****" in buf.getvalue()        
+
 
 @pytest.mark.integration
 def test_list_domain(set_up):
