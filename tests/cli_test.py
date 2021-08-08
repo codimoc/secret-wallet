@@ -219,3 +219,45 @@ def test_shell_set_help(set_up):
         Parser()
         assert 'usage: secretwallet set' in buf.getvalue()
 
+def test_shell_set_get_delete(set_up):
+    password = 'Arz12@gh67!caz'
+    #mocking input to pass a 'set ...' command in a shell
+    iou.my_input = iou.MockableInput(["set -d shell_test -a test -ik test -iv 'this is a test'",
+                                      password,
+                                      password,
+                                      'get -d shell_test -a test',
+                                      password,
+                                      'delete -d shell_test -a test',
+                                      'yes',
+                                      'quit'])
+    sys.argv=['secret_wallet','shell']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert 'this is a test' in buf.getvalue()
+
+    #now check it is not there any longer
+    assert not du.has_secret('shell_test','test')
+
+def test_shell_set_rename_get_delete(set_up):
+    password = 'Arz12@gh67!caz'
+    #mocking input to pass a 'set ...' command in a shell
+    iou.my_input = iou.MockableInput(["set -d shell_test -a test -ik test -iv 'this is a test'",
+                                      password,
+                                      password,
+                                      'rename -d shell_test -a test -na test2',
+                                      'yes',
+                                      'get -d shell_test -a test2',
+                                      password,
+                                      'delete -d shell_test -a test2',
+                                      'yes',
+                                      'quit'])
+    sys.argv=['secret_wallet','shell']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert 'this is a test' in buf.getvalue()
+
+    #now check it is not there any longer
+    assert not du.has_secret('shell_test','test')
+    assert not du.has_secret('shell_test','test2')
+
+

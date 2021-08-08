@@ -51,15 +51,18 @@ def my_parse(parser, args):
 class MockableInput:
     def __init__(self,inputs) -> None:
         "Passes a sets of inputs to be replayed"
-        self.__inputs = inputs
-        self.__idx = 0
+
+        #internal generator function  
+        def generator(inputs) -> str:
+            while len(inputs) > 0:
+                yield inputs.pop(0)
+            return
+            
+        self.__generator = generator(inputs)
 
     def __call__(self, question:str) -> str:
-        if self.__idx < len(self.__inputs):
-            out = self.__inputs[self.__idx]
-            self.__idx+=1
-            return out
-        return None
+        return self.__generator.__next__()
+
 
 def display_reconfiguration_warning():
     "Display a warning when reconfiguring the system"
