@@ -60,7 +60,7 @@ class Parameters(object):
         self.__data = dict()
     
     def set_data(self,data):
-        self.__data = data
+        self.__data = dict(data)
     
     def configure(self, conf_file):
         if not exists(conf_file):

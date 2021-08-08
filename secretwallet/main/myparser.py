@@ -403,6 +403,7 @@ class Parser(object):
             try:
                 args = parser.parse_args(tokens[:1])
             except SystemExit as e: #don't break the shell
+                parameters.set_in_shell(False)
                 iou.my_output("Wrong Input command!!")
                 iou.my_output(usage_shell)
                 continue                
@@ -413,11 +414,13 @@ class Parser(object):
             # use dispatch pattern to invoke method with same name
             try:
                 sys.argv=['secret_wallet'] + tokens  #append a first argument just for padding (could be anything)
+                parameters.set_in_shell(True)
                 getattr(self, args.command)()
+                parameters.set_in_shell(False)
             except Exception as e: #don't break the shell
+                parameters.set_in_shell(False)
                 iou.my_output(repr(e))
                 continue                   
-            pass
                            
     def session(self):
         parser = argparse.ArgumentParser(

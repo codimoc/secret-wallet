@@ -1,7 +1,9 @@
+import getpass
+import logging
 from secretwallet.utils.logging import get_logger
 from secretwallet.constants import parameters
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, logging.DEBUG)
 
 def display_list(message, secrets):
     field_lenght = max([len(x[0]) for x in secrets], default=0)+5
@@ -38,6 +40,10 @@ def my_output(message, want_exit=False):
     if want_exit:
         exit(1)
 
+def my_getpass(question):
+    "Mockable getpass function"
+    return getpass(question)    
+
 def my_parse(parser, args):
     try:
         return parser.parse_args(args)
@@ -57,11 +63,13 @@ class MockableInput:
             while len(inputs) > 0:
                 yield inputs.pop(0)
             return
-            
+
         self.__generator = generator(inputs)
 
     def __call__(self, question:str) -> str:
-        return self.__generator.__next__()
+        input = self.__generator.__next__()
+        logger.debug(f"{question}: {input}")
+        return input
 
 
 def display_reconfiguration_warning():

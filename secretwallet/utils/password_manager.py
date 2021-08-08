@@ -1,4 +1,4 @@
-from getpass import getpass
+import secretwallet.utils.ioutils as iou
 from password_strength import PasswordPolicy
 from secretwallet.constants import PWD_LENGTH, PWD_NUMBERS, PWD_SPECIAL, PWD_UPPER, PWD_ATTEMPTS
 from secretwallet.utils.logging import get_logger
@@ -29,13 +29,13 @@ def get_password(prompt, attempts):
     num_attempts = attempts
     while num_attempts >0: 
         print(f"*** {num_attempts} attempts left ***")
-        p1 = getpass(f"{prompt}-First entry  :")
+        p1 = iou.my_getpass(f"{prompt}-First entry  :")
         explanation = explain(p1)
         if explanation is not None:
             print(explanation)
             num_attempts -= 1
             continue
-        p2 = getpass(f"{prompt}-Verification :")
+        p2 = iou.my_getpass(f"{prompt}-Verification :")
         if p1 != p2:
             message = "The two passwords are different, try again"
             print(message)
@@ -49,7 +49,7 @@ def get_password(prompt, attempts):
     exit(1)
     
 def get_password_untested(prompt):
-    return getpass(f"{prompt} :")
+    return iou.my_getpass(f"{prompt} :")
     
 def get_memorable_password(tested = False):
     """Get the memorable password, either from the live session or from the client prompt.

@@ -24,6 +24,7 @@ MEM    = 'memorable'
    
 old_input = iou.my_input
 old_output = iou.my_output
+old_getpass = iou.my_getpass
  
 
 @pytest.fixture
@@ -38,13 +39,14 @@ def set_up():
     parameters.set_data(conf_data) 
     du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM)
     
-    p =Process(target=my_session, args =('memorable', 60, 10))
+    p =Process(target=my_session, args =(MEM, 60, 10))
     p.start()
        
     yield conf_file
             
     iou.my_input = old_input
     iou.my_output = old_output
+    iou.my_getpass = old_getpass
     du.delete_secret(DOMAIN,ACCESS)
     parameters.clear()
     set_configuration_data(conf_data, conf_file) 
@@ -129,8 +131,8 @@ def test_update_info(set_up):
     
 @pytest.mark.integration        
 def test_rename_secret(set_up):
-    new_domain = "new domain"
-    new_access = "new_access"
+    new_domain = "new domain_01"
+    new_access = "new_access_01"
     
     sleep(1)
     #delete first
@@ -221,12 +223,11 @@ def test_shell_set_help(set_up):
 
 def test_shell_set_get_delete(set_up):
     password = 'Arz12@gh67!caz'
+    #mocking password retrieval
+    iou.my_getpass = lambda question: password
     #mocking input to pass a 'set ...' command in a shell
     iou.my_input = iou.MockableInput(["set -d shell_test -a test -ik test -iv 'this is a test'",
-                                      password,
-                                      password,
                                       'get -d shell_test -a test',
-                                      password,
                                       'delete -d shell_test -a test',
                                       'yes',
                                       'quit'])
@@ -240,14 +241,13 @@ def test_shell_set_get_delete(set_up):
 
 def test_shell_set_rename_get_delete(set_up):
     password = 'Arz12@gh67!caz'
+    #mocking password retrieval
+    iou.my_getpass = lambda question: password
     #mocking input to pass a 'set ...' command in a shell
     iou.my_input = iou.MockableInput(["set -d shell_test -a test -ik test -iv 'this is a test'",
-                                      password,
-                                      password,
                                       'rename -d shell_test -a test -na test2',
                                       'yes',
                                       'get -d shell_test -a test2',
-                                      password,
                                       'delete -d shell_test -a test2',
                                       'yes',
                                       'quit'])
