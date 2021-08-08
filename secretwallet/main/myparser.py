@@ -7,6 +7,7 @@ Created on 1 Jan 2020
 import argparse
 import secretwallet.utils.ioutils as iou 
 import sys
+import readline
 
 from secretwallet.constants import parameters
 from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
@@ -391,6 +392,9 @@ class Parser(object):
                             help='Command to run inside the shell')
         iou.my_output('Starting a secret_wallet interactive shell. Type quit to quit, help for help')
         parameters.set_in_shell(True)
+        #using readline for history of command line and other
+        readline.parse_and_bind('tab: complete')
+        readline.parse_and_bind('set editing-mode vi')
         while True: #this is the shell main loop
             cmd = iou.my_input(':> ')
             if cmd.lower().startswith('quit'):

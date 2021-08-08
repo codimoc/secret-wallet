@@ -42,7 +42,7 @@ def my_output(message, want_exit=False):
 
 def my_getpass(question):
     "Mockable getpass function"
-    return getpass(question)    
+    return getpass.getpass(question)    
 
 def my_parse(parser, args):
     try:
