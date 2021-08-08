@@ -6,7 +6,7 @@ import pytest
 from secretwallet.constants import parameters
 from secretwallet.main.configuration import get_configuration, set_configuration_data
 from secretwallet.main.myparser import Parser
-import secretwallet.main.myparser as myp
+import secretwallet.utils.ioutils as iou
 from secretwallet.session.service import my_session
 from secretwallet.session.client import is_connected, stop_service
 import secretwallet.utils.cryptutils as cu
@@ -21,13 +21,16 @@ PWD    = 'pass'
 INFO   = {'key':'value'}
 MEM    = 'memorable'
 
+   
+old_input = iou.my_input
+old_output = iou.my_output
+ 
+
 @pytest.fixture
 def set_up():
-    old_input = myp.my_input
-    old_output = myp.my_output
     #mocking the user input
-    myp.my_input  = lambda _:'yes'
-    myp.my_output = lambda message,_=False : print(message)
+    iou.my_input  = lambda _:'yes'
+    iou.my_output = lambda message,_=False: print(message)
     
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path,'data','test_integration.json')
@@ -40,8 +43,8 @@ def set_up():
        
     yield conf_file
             
-    myp.my_input = old_input
-    myp.my_oytput = old_output
+    iou.my_input = old_input
+    iou.my_output = old_output
     du.delete_secret(DOMAIN,ACCESS)
     parameters.clear()
     set_configuration_data(conf_data, conf_file) 
@@ -130,11 +133,15 @@ def test_rename_secret(set_up):
     new_access = "new_access"
     
     sleep(1)
+    #delete first
+    du.delete_secret(DOMAIN, ACCESS)
+    #then set   
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
     Parser()
     assert du.has_secret(DOMAIN, ACCESS)
     assert not du.has_secret(new_domain, new_access)
     
+    #now rename
     sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', ACCESS, '-nd', new_domain,'-na', new_access]
     Parser()
     assert not du.has_secret(DOMAIN, ACCESS)
@@ -204,8 +211,11 @@ def test_wrong_memorable_password(set_up):
     finally:
         du.delete_secret(DOMAIN,my_access)
 
-# def test_shell_set_help(set_up):
-#     sys.argv=['secret_wallet','shell']
-#     #mocking input to pass a 'set -h' command
-#     myp.my_input = lambda _:"set -h"
-#     Parser()
+def test_shell_set_help(set_up):
+    #mocking input to pass a 'set -h' command in a shell
+    iou.my_input = iou.MockableInput(['set -h','quit'])
+    sys.argv=['secret_wallet','shell']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert 'usage: secretwallet set' in buf.getvalue()
+
