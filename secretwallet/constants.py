@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 from os.path import expanduser, exists
@@ -133,6 +134,26 @@ class Parameters(object):
             return self.__data['in_shell']
         else:
             return False
+        
+    def get_memorable_pwd(self):
+        "get the memorable password if stored during in shell mode" 
+        if not self.is_in_shell():
+            return None
+        if 'memorable' in self.__data and 'clock_start' in self.__data:
+            now = datetime.datetime.now()  
+            if (now - self.get_clock_start()).total_seconds() < self.get_session_timeout():
+                self.set_clock_start(now)
+                return self.__data['memorable']
+            else:
+                self.set_memorable_pwd(None)
+                return None
+        else:
+            return None
+        
+    def set_memorable_pwd(self, memorable):
+        "set the memorable password during shell mode"
+        self.__data['memorable'] = memorable
+        self.set_clock_start(datetime.datetime.now())
         
 
     def get_session_lifetime(self):
