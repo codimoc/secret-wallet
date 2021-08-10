@@ -1,7 +1,9 @@
 import getpass
 import logging
-from secretwallet.utils.logging import get_logger
+
 from secretwallet.constants import parameters
+from secretwallet.utils.logging import get_logger
+
 
 logger = get_logger(__name__, logging.DEBUG)
 
@@ -36,6 +38,7 @@ def my_input(question):
 
 def my_output(message, want_exit=False):
     "Mockable output function"
+    logger.info(message)
     print(message)
     if want_exit:
         exit(1)
