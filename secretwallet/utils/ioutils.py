@@ -36,9 +36,10 @@ def my_input(question):
     "Mockable input function"
     return input(question)
 
-def my_output(message, want_exit=False):
+def my_output(message, want_exit=False, with_logging = True):
     "Mockable output function"
-    logger.info(message)
+    if with_logging:
+        logger.info(message)
     print(message)
     if want_exit:
         exit(1)

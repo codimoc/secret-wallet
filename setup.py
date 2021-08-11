@@ -50,6 +50,7 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'secret_wallet = secretwallet.main:main',
+            'secret_wallet_shell = secretwallet.main:shell',
             'secret_wallet_conf = secretwallet.main:configure'],
     },
     tests_require=['pytest'],

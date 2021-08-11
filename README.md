@@ -6,7 +6,9 @@
 + **Liability disclaimer**: This application does its best to provide means of securing data on a remote store, as explained in the documentation below. By reading this document and/or by browsing through the open source [code](https://github.com/codimoc/secret-wallet), the user will decide if this application satisfies his/her needs. By downloading and using this application the end user accepts full responsibility of any damage incurred as a consequence of the use of this application. To the maximum extent permitted by applicable law, the owner and developers of this application shall not be liable for any indirect, incidental, special, consequential or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, goodwill, or other intangible losses, resulting from the use of this application.
 
 ## Warning
-This application was written and designed for Linux and provides somewhat reduced functionalities on Windows systems. The original design was aimed at a command line tool that integrates inside a Linux shell like bash, with some functionalities running in the background. The role of the background processes is to keep the latest password in memory for a short while, to facilitate a repeated usage. Since this memory functionality does not port well onto Windows platforms, it is currently disabled on Windows installations. This issue is in scope for future releases, with the improvement of the user interface. 
+This application was written and designed for Linux and provides somewhat reduced functionalities on Windows systems. The original design was aimed at a command line tool that integrates inside a Linux shell like bash, with some functionalities running in the background. From version 0.4 onwards, a bespoke secret_wallet **shell** has been added, addressing most of the
+limitations on Windows platforms. By Launching the **shell** with the command line  _secret_wallet_shell(.exe)_  the application runs inside its own environment, hence keeping a short memory of the password used in previous and recent queries, within a specified timeout period.
+This facilitates a repeated usage of the application, without the need of retyping the password. Please see a more detailed explanation in the [shell](#shell) section below. 
 
 
 ## Introduction
@@ -38,10 +40,11 @@ Data can be encrypted on a hard drive, but the disk can fail, the phone can be s
 *  [the secret wallet session](#session)
 *  [customization of parameters](#customization)
 *  [reconfiguration](#reconfiguration)
+*  [shell and Windows usage](#shell)
 *  [work in progress](#work)
 *  [help needed](#help)
 *  [FAQ](#faq)
-*  [Release Notes](Release+Notes)
+*  [Release Notes](#notes)
 
 ## <a id="motivations"></a>Motivations
 
@@ -264,6 +267,39 @@ where the values are in seconds, *i.e.* timeout of 30 seconds and a lifetime of 
 The reconfiguration process allows the re-encryption of all existing secrets when the device password or the memorable password are changed. In this scenario all secrets need to be retrieved, decrypted and re-encrypted with the new key(s). This can be done with the **reconf** command, with optional parameters set to *-d* for a change of device password, and to *-m* for a change of memorable password.
 
 When this action is performed, a backup copy of the table containing the secrets is stored on the cloud. This can be used to restore the state of the table later on, if a roll-back is required.
+
+## <a id="shell"></a>The Shell and Windows usage
+It is possible to run the  _secret_wallet_  inside its own shell by either calling the shell sub-command or by invoking directly the shell start-up script as below: 
+
+        secret_wallet shell
+or
+
+        secret_wallet_shell
+        
+A new prompt will appear (:>) and the shell can be terminated at any time by typing the  _quit_  command. There are three advantages of operating inside the shell:
+
+*   No need to type the program name at the beginning of the command line. The original commands from the bash shell:
+
+        secret_wallet help
+        secret_wallet list
+        secret_wallet query -d xxx
+        secret_wallet get -d xxx -a yyy
+        
+Inside the shell are now:
+
+        help
+        list
+        query -d xxx
+        get -d xxx -a yyy
+        quit
+        
+*   A history of the previous command can be replayed with the up arrow, and some command auto-completion are in the future pipeline
+
+*   A timed-out memory of the recently used memorable password facilitates repeated queries, without the need of retyping the memorable password. This is particularly aimed at *Windows* users, who don't rely on the bash shell and Linux background daemons and who did not have access to this feature in previous versions. The configuration of this password time-out (the default is 60 seconds) can be done inside the shell. For a two minutes' time-out, for example, the command would be:
+
+        conf -to 120
+                  
+ 
  
 ## <a id="work"></a>Work in progress
 Coming soon, in the next releases, there will be some feature improvements and fixes, like:
@@ -280,4 +316,7 @@ This simple application has the potential of becoming a useful productivity tool
 Help is needed and welcome. Please visit the the [github page](https://github.com/codimoc/secret-wallet) and raise new issues, or contact the author via email from the email address you will find in the secret-wallet page on [pypi](https://pypi.org/).    
 
 ## <a id="faq"></a>FAQ
-A *frequently asked questions* will be maintained [here](https://github.com/codimoc/secret-wallet/wiki/FAQ). 
+A *frequently asked questions* is maintained [here](https://github.com/codimoc/secret-wallet/wiki/FAQ). 
+
+## <a id="notes"></a>Release Notes
+The *Release Notes* are maintained [here](https://github.com/codimoc/secret-wallet/wiki/Release-Notes). 

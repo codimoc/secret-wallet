@@ -5,9 +5,9 @@ Created on 1 Jan 2020
 '''
 
 import argparse
-import secretwallet.utils.ioutils as iou 
-import sys
 import readline
+import shlex
+import sys
 
 from secretwallet.constants import parameters
 from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
@@ -20,8 +20,8 @@ from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, li
 from secretwallet.utils.logging import get_logger                                    
 
 import pkg_resources as pkg
+import secretwallet.utils.ioutils as iou 
 import secretwallet.utils.password_manager as pm
-import shlex
 
 
 logger = get_logger(__name__)
@@ -401,7 +401,7 @@ class Parser(object):
                 parameters.set_in_shell(False)
                 break
             if cmd.lower().startswith('help'):
-                iou.my_output(usage_shell)
+                iou.my_output(usage_shell, with_logging=False)
                 continue
             tokens = shlex.split(cmd) #keep quoted test together
             try:
@@ -409,11 +409,11 @@ class Parser(object):
             except SystemExit as e: #don't break the shell
                 parameters.set_in_shell(False)
                 iou.my_output("Wrong Input command!!")
-                iou.my_output(usage_shell)
+                iou.my_output(usage_shell, with_logging=False)
                 continue                
             if not hasattr(self, args.command):
                 iou.my_output('Unrecognized command')
-                iou.my_output(usage_shell)
+                iou.my_output(usage_shell, with_logging=False)
                 continue
             # use dispatch pattern to invoke method with same name
             try:
