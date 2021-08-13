@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 from os.path import expanduser, exists
@@ -60,7 +61,7 @@ class Parameters(object):
         self.__data = dict()
     
     def set_data(self,data):
-        self.__data = data
+        self.__data = dict(data)
     
     def configure(self, conf_file):
         if not exists(conf_file):
@@ -112,6 +113,47 @@ class Parameters(object):
         
     def set_session_timeout(self, timeout):
         self.__data['session_timeout'] = timeout
+
+    def set_clock_start(self, start):
+        "set the time from which password timeout starts counting down"
+        self.__data['clock_start'] = start
+
+    def get_clock_start(self):
+        "get the time from which password timeout started counting down"
+        if 'clock_start' in self.__data:
+            return self.__data['clock_start']
+        else:
+            return None
+    def set_in_shell(self, flag):
+        "set a flag to say if in shell or not"
+        self.__data['in_shell'] = flag
+
+    def is_in_shell(self):
+        "check if we are running inside a shell"
+        if "in_shell" in self.__data:
+            return self.__data['in_shell']
+        else:
+            return False
+        
+    def get_memorable_pwd(self):
+        "get the memorable password if stored during in shell mode" 
+        if not self.is_in_shell():
+            return None
+        if 'memorable' in self.__data and 'clock_start' in self.__data:
+            now = datetime.datetime.now()  
+            if (now - self.get_clock_start()).total_seconds() < self.get_session_timeout():
+                self.set_clock_start(now)
+                return self.__data['memorable']
+            else:
+                self.set_memorable_pwd(None)
+                return None
+        else:
+            return None
+        
+    def set_memorable_pwd(self, memorable):
+        "set the memorable password during shell mode"
+        self.__data['memorable'] = memorable
+        self.set_clock_start(datetime.datetime.now())
         
 
     def get_session_lifetime(self):

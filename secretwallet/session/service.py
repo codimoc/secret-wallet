@@ -67,7 +67,7 @@ def my_session(value, lifetime, timeout):
     q.join()
     
 def start_my_session(value, lifetime, timeout):
-    if is_posix():
+    if is_posix() and not parameters.is_in_shell():
         import daemon             
         with daemon.DaemonContext():
             my_session(value, lifetime, timeout)

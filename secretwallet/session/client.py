@@ -35,6 +35,8 @@ def stop_service():
     logger.debug(r['status'])
     
 def is_connected():
+    if parameters.is_in_shell():
+        return False #the secret_wallet shell has a different way to keep the password
     if not is_posix():
         return False  #only posix systems support daemons in the way required
     try:

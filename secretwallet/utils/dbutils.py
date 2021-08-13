@@ -4,6 +4,7 @@ Created on 24 Dec 2019
 @author: codimoc
 '''
 
+import secretwallet.utils.ioutils as iou
 import boto3
 import sys
 from boto3.dynamodb.conditions import Key
@@ -205,12 +206,9 @@ def rename_secret(domain, access, new_domain, new_access):
             table.delete_item(Key={'domain'  : domain,
                                    'access'  : access})
         except Exception as e:
-            logger.error(e)
-            print(e)    
+            iou.my_output(e)
     else:
-        message = f"Could not find secret ({domain},{access})"
-        print(message)
-        logger.error(message)
+        iou.my_output(f"Could not find secret ({domain},{access})")
     
 def has_secret(domain, access):
     """Checks the existence of a secret

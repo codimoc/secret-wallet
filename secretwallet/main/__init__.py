@@ -9,3 +9,8 @@ def main():
 def configure():
     make_configurations()
     
+def shell():
+    load_configurations()
+    sys.argv=['secret_wallet','shell']
+    myparser.Parser()
+    

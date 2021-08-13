@@ -6,7 +6,7 @@ import pytest
 from secretwallet.constants import parameters
 from secretwallet.main.configuration import get_configuration, set_configuration_data
 from secretwallet.main.myparser import Parser
-import secretwallet.main.myparser as myp
+import secretwallet.utils.ioutils as iou
 from secretwallet.session.service import my_session
 from secretwallet.session.client import is_connected, stop_service
 import secretwallet.utils.cryptutils as cu
@@ -21,13 +21,17 @@ PWD    = 'pass'
 INFO   = {'key':'value'}
 MEM    = 'memorable'
 
+   
+old_input = iou.my_input
+old_output = iou.my_output
+old_getpass = iou.my_getpass
+ 
+
 @pytest.fixture
 def set_up():
-    old_input = myp.my_input
-    old_output = myp.my_output
     #mocking the user input
-    myp.my_input  = lambda _:'yes'
-    myp.my_output = lambda message,_=False : print(message)
+    iou.my_input  = lambda _:'yes'
+    iou.my_output = lambda message,_=False: print(message)
     
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path,'data','test_integration.json')
@@ -35,13 +39,14 @@ def set_up():
     parameters.set_data(conf_data) 
     du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM)
     
-    p =Process(target=my_session, args =('memorable', 60, 10))
+    p =Process(target=my_session, args =(MEM, 60, 10))
     p.start()
        
     yield conf_file
             
-    myp.my_input = old_input
-    myp.my_oytput = old_output
+    iou.my_input = old_input
+    iou.my_output = old_output
+    iou.my_getpass = old_getpass
     du.delete_secret(DOMAIN,ACCESS)
     parameters.clear()
     set_configuration_data(conf_data, conf_file) 
@@ -67,6 +72,17 @@ def test_list(set_up):
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert "<domain>" in buf.getvalue()
+
+@pytest.mark.integration
+def test_empty_list(set_up):
+    sys.argv=['secret_wallet','list','-d','xxx']
+    #output redirection to string
+    with io.StringIO() as buf, redirect_stdout(buf):
+        try:
+            Parser()
+        except:
+            assert False, "An empty list should not raise and exception when formatted"
+        assert "****" in buf.getvalue()        
 
 
 @pytest.mark.integration
@@ -115,15 +131,19 @@ def test_update_info(set_up):
     
 @pytest.mark.integration        
 def test_rename_secret(set_up):
-    new_domain = "new domain"
-    new_access = "new_access"
+    new_domain = "new domain_01"
+    new_access = "new_access_01"
     
     sleep(1)
+    #delete first
+    du.delete_secret(DOMAIN, ACCESS)
+    #then set   
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
     Parser()
     assert du.has_secret(DOMAIN, ACCESS)
     assert not du.has_secret(new_domain, new_access)
     
+    #now rename
     sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', ACCESS, '-nd', new_domain,'-na', new_access]
     Parser()
     assert not du.has_secret(DOMAIN, ACCESS)
@@ -192,3 +212,52 @@ def test_wrong_memorable_password(set_up):
             assert 'InvalidToken' in buf.getvalue()
     finally:
         du.delete_secret(DOMAIN,my_access)
+
+def test_shell_set_help(set_up):
+    #mocking input to pass a 'set -h' command in a shell
+    iou.my_input = iou.MockableInput(['set -h','quit'])
+    sys.argv=['secret_wallet','shell']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert 'usage: secretwallet set' in buf.getvalue()
+
+def test_shell_set_get_delete(set_up):
+    password = 'Arz12@gh67!caz'
+    #mocking password retrieval
+    iou.my_getpass = lambda question: password
+    #mocking input to pass a 'set ...' command in a shell
+    iou.my_input = iou.MockableInput(["set -d shell_test -a test -ik test -iv 'this is a test'",
+                                      'get -d shell_test -a test',
+                                      'delete -d shell_test -a test',
+                                      'yes',
+                                      'quit'])
+    sys.argv=['secret_wallet','shell']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert 'this is a test' in buf.getvalue()
+
+    #now check it is not there any longer
+    assert not du.has_secret('shell_test','test')
+
+def test_shell_set_rename_get_delete(set_up):
+    password = 'Arz12@gh67!caz'
+    #mocking password retrieval
+    iou.my_getpass = lambda question: password
+    #mocking input to pass a 'set ...' command in a shell
+    iou.my_input = iou.MockableInput(["set -d shell_test -a test -ik test -iv 'this is a test'",
+                                      'rename -d shell_test -a test -na test2',
+                                      'yes',
+                                      'get -d shell_test -a test2',
+                                      'delete -d shell_test -a test2',
+                                      'yes',
+                                      'quit'])
+    sys.argv=['secret_wallet','shell']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert 'this is a test' in buf.getvalue()
+
+    #now check it is not there any longer
+    assert not du.has_secret('shell_test','test')
+    assert not du.has_secret('shell_test','test2')
+
+

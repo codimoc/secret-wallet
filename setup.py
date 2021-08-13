@@ -27,7 +27,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="secret-wallet-codimoc",
-    version="0.3.3",
+    version="0.4.2",
     author="codimoc",
     author_email="codimoc@prismoid.uk",
     description="A cloud-based wallet for personal secrets",
@@ -41,10 +41,16 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    install_requires = ['boto3','cryptography','password_strength','python-daemon','docutils<0.16'],
+    install_requires = ['boto3',
+                        'cryptography',
+                        'password_strength',
+                        'python-daemon',
+                        'docutils<0.16',
+                        'pyreadline'],
     entry_points={
         'console_scripts': [
             'secret_wallet = secretwallet.main:main',
+            'secret_wallet_shell = secretwallet.main:shell',
             'secret_wallet_conf = secretwallet.main:configure'],
     },
     tests_require=['pytest'],

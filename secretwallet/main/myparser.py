@@ -5,6 +5,8 @@ Created on 1 Jan 2020
 '''
 
 import argparse
+import readline
+import shlex
 import sys
 
 from secretwallet.constants import parameters
@@ -18,17 +20,13 @@ from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, li
 from secretwallet.utils.logging import get_logger                                    
 
 import pkg_resources as pkg
+import secretwallet.utils.ioutils as iou 
 import secretwallet.utils.password_manager as pm
 
 
 logger = get_logger(__name__)
 
-class Parser(object):
-
-    def __init__(self):
-        parser = argparse.ArgumentParser(
-            description='The Secrets manager',
-            usage='''secretwallet <command> [<args>]
+usage_bash = '''secret_wallet <command> [<args>]
 
 The list of secretwallet commands are:
    set             Insert a new secret
@@ -43,20 +41,49 @@ The list of secretwallet commands are:
    client          (testing) retrieves the memorable password from the running session
    help            print the main help page
    version         the version of this package
+   shell           starts a secret_wallet sheel for interctive queries
    ....
    
 For individual help type:
 secretwallet <command> -h
-''')        
+'''
+
+usage_shell = '''<command> [<args>]
+
+The list of secretwallet commands are:
+   set             Insert a new secret
+   get             Retrieves a secret
+   delete          Remove a secret
+   rename          rename a secret
+   list            list all secrets in a given domain
+   conf            manage the configuration file
+   query           query secrets based on a condition
+   reconf          change an existing configuration
+   help            print the main help page
+   version         the version of this package
+   quit            terminate the interactive shell
+   ....
+   
+For individual help type:
+<command> -h
+'''
+
+class Parser(object):
+
+    def __init__(self):
+        parser = argparse.ArgumentParser(
+            description='The Secrets manager',
+            usage=usage_bash)        
         parser.add_argument('command',
                             action='store',
                             choices=['set','get','delete', 'rename', 'list', 'conf',
-                                     'query','reconf','help','session','client', 'version'],
+                                     'query','reconf','help','session','client',
+                                     'version', 'shell'],
                             help='Command to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.command):
-            my_output('Unrecognized command')
+            iou.my_output('Unrecognized command')
             parser.print_help()
             exit(1)
         # use dispatch pattern to invoke method with same name
@@ -89,8 +116,12 @@ secretwallet <command> -h
         parser.add_argument('-iv',
                             '--info_value',
                             help='The value in an information map')                       
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Running set for domain %s and access %s' %(args.domain,args.access))
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
+        iou.my_output('Running set for domain %s and access %s' %(args.domain,args.access))
         if args.info_key is None or args.info_value is None:
             info = None
         else:
@@ -104,7 +135,7 @@ secretwallet <command> -h
             if need_session:
                 start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
         except Exception as e:
-            my_output(repr(e))
+            iou.my_output(repr(e))
         
     def get(self):
         parser = argparse.ArgumentParser(
@@ -119,15 +150,19 @@ secretwallet <command> -h
                         dest='access',
                         required=True,
                         help='The sub=domain (sub-category or access) of the secret')
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Running get with arguments %s' % args)
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
+        iou.my_output('Running get with arguments %s' % args)
         try:
             memorable, need_session = pm.get_memorable_password(False)
-            display_secret(get_secret(args.domain, args.access, memorable))
+            iou.display_secret(get_secret(args.domain, args.access, memorable))
             if need_session:
                 start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())            
         except Exception as e:
-            my_output(repr(e))
+            iou.my_output(repr(e))
             
     def delete(self):
         parser = argparse.ArgumentParser(
@@ -141,18 +176,22 @@ secretwallet <command> -h
         parser.add_argument('-a',
                             dest ='access',
                             help='The sub=domain (sub-category or access) of the secret')
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Running delete with arguments %s' % args)
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
+        iou.my_output('Running delete with arguments %s' % args)
         try:
             if args.access is not None:
-                confirm_delete([(args.domain, args.access)])
+                iou.confirm_delete([(args.domain, args.access)])
                 delete_secret(args.domain, args.access)
             else:
                 secrets = list_secrets(args.domain)
-                confirm_delete(secrets)
+                iou.confirm_delete(secrets)
                 delete_secrets(secrets)
         except Exception as e:
-            my_output(repr(e))            
+            iou.my_output(repr(e))            
 
     def rename(self):
         parser = argparse.ArgumentParser(
@@ -175,24 +214,27 @@ secretwallet <command> -h
                             dest ='new_access',
                             default = None,
                             help='The new asset')        
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Running rename with arguments %s' % args)
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+        
+        iou.my_output('Running rename with arguments %s' % args)
         try:
             if args.new_domain is None and args.new_access is None:
-                my_output("No new keys have been passed", True)
+                iou.my_output("No new keys have been passed", True)
             elif args.new_domain == args.domain and args.new_access == args.access:
-                my_output("Both new values are the same as the originals: nothing to do", True)
+                iou.my_output("Both new values are the same as the originals: nothing to do", True)
             elif not has_secret(args.domain, args.access):
-                my_output("Could not find the secret to rename", True)                                    
+                iou.my_output("Could not find the secret to rename", True)                                    
             else:
                 if args.new_domain is None:
                     args.new_domain = args.domain
                 if args.new_access is None:
                     args.new_access = args.access
-                confirm_rename([(args.domain, args.access)])                                    
+                iou.confirm_rename([(args.domain, args.access)])                                    
                 rename_secret(args.domain, args.access, args.new_domain, args.new_access)
         except Exception as e:
-            my_output(repr(e))
+            iou.my_output(repr(e))
 
     def list(self):
         parser = argparse.ArgumentParser(
@@ -202,13 +244,17 @@ secretwallet <command> -h
         parser.add_argument('-d',
                             '--domain',
                             help='The domain (category) of the secrets. If not given all secrets are returned')
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Running list with arguments %s' % args)
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
+        iou.my_output('Running list with arguments %s' % args)
         try:
             secrets = list_secrets(args.domain)
-            display_list("List of secrets", secrets)
+            iou.display_list("List of secrets", secrets)
         except Exception as e:
-            my_output(repr(e))
+            iou.my_output(repr(e))
             
     def query(self):
         parser = argparse.ArgumentParser(
@@ -223,13 +269,17 @@ secretwallet <command> -h
                             '--access',
                             default=None,
                             help='A substring to query the access. Only secrets with this substring in their access are returned')        
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Query secrets with arguments %s' % args)
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
+        iou.my_output('Query secrets with arguments %s' % args)
         try:
             secrets = query_secrets(args.domain, args.access)
-            display_list("List of secrets", secrets)
+            iou.display_list("List of secrets", secrets)
         except Exception as e:
-            my_output(repr(e))            
+            iou.my_output(repr(e))            
             
     def conf(self):
         parser = argparse.ArgumentParser(
@@ -253,8 +303,12 @@ secretwallet <command> -h
                             type = int,
                             default = -1,
                             help='Session lifetime in seconds')                
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Running conf with arguments %s' % args)
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
+        iou.my_output('Running conf with arguments %s' % args)
         try:
             if (args.list):
                 list_configuration()
@@ -268,7 +322,7 @@ secretwallet <command> -h
             else:
                 pass
         except Exception as e:
-            my_output(repr(e))
+            iou.my_output(repr(e))
             
     def reconf(self):
         parser = argparse.ArgumentParser(
@@ -285,27 +339,31 @@ secretwallet <command> -h
                             action = 'store_true',
                             default = False,
                             help='Reconfigure secrets because of a change of device password')        
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Running reconf for domain %s and access %s' %(args.domain,args.access))
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
+        iou.my_output('Running reconf for domain %s and access %s' %(args.domain,args.access))
         try:
             if args.memorable:
                 if is_connected():
                     stop_service()
-                display_reconfiguration_warning()
+                iou.display_reconfiguration_warning()
                 
-                my_output('***Enter the existing memorable password***')
+                iou.my_output('***Enter the existing memorable password***')
                 old_memorable, _ = pm.get_memorable_password(False)                
-                my_output('***Set the new memorable password***')
+                iou.my_output('***Set the new memorable password***')
                 new_memorable, _ = pm.get_memorable_password(True)
                 reconf_memorable(list_secrets(None), old_memorable, new_memorable, True)
             elif args.device:
                 if is_connected():
                     stop_service()
-                display_reconfiguration_warning()
+                iou.display_reconfiguration_warning()
                 
-                my_output('***Enter the existing memorable password***')
+                iou.my_output('***Enter the existing memorable password***')
                 old_memorable, _ = pm.get_memorable_password(False)                
-                my_output('***Set the new device password***')
+                iou.my_output('***Set the new device password***')
                 new_device, _ = pm.get_memorable_password(True)
                 reconf_salt_key(list_secrets(None), old_memorable, new_device, True)
                 
@@ -315,13 +373,58 @@ secretwallet <command> -h
                 cdata['key'] = ekey
                 set_configuration_data(cdata)                                
         except Exception as e:
-            my_output(repr(e))                                            
+            iou.my_output(repr(e))                                            
         
     def help(self):
         self._parser.print_help()
         
     def version(self):
         print("secret-wallet-codimoc version %s"%pkg.get_distribution('secret-wallet-codimoc').version)
+
+    def shell(self):
+        parser = argparse.ArgumentParser(
+            description='Interactive secret_wallet shell',
+            prog='secret_wallet shell')
+        parser.add_argument('command',
+                            action='store',
+                            choices=['set','get','delete', 'rename', 'list', 'conf',
+                                     'query','reconf','help','session','quit'],
+                            help='Command to run inside the shell')
+        iou.my_output('Starting a secret_wallet interactive shell. Type quit to quit, help for help')
+        parameters.set_in_shell(True)
+        #using readline for history of command line and other
+        readline.parse_and_bind('tab: complete')
+        readline.parse_and_bind('set editing-mode vi')
+        while True: #this is the shell main loop
+            cmd = iou.my_input(':> ')
+            if cmd.lower().startswith('quit'):
+                parameters.set_in_shell(False)
+                break
+            if cmd.lower().startswith('help'):
+                iou.my_output(usage_shell, with_logging=False)
+                continue
+            tokens = shlex.split(cmd) #keep quoted test together
+            try:
+                args = parser.parse_args(tokens[:1])
+            except SystemExit as e: #don't break the shell
+                parameters.set_in_shell(False)
+                iou.my_output("Wrong Input command!!")
+                iou.my_output(usage_shell, with_logging=False)
+                continue                
+            if not hasattr(self, args.command):
+                iou.my_output('Unrecognized command')
+                iou.my_output(usage_shell, with_logging=False)
+                continue
+            # use dispatch pattern to invoke method with same name
+            try:
+                sys.argv=['secret_wallet'] + tokens  #append a first argument just for padding (could be anything)
+                parameters.set_in_shell(True)
+                getattr(self, args.command)()
+                parameters.set_in_shell(False)
+            except Exception as e: #don't break the shell
+                parameters.set_in_shell(False)
+                iou.my_output(repr(e))
+                continue                   
                            
     def session(self):
         parser = argparse.ArgumentParser(
@@ -342,12 +445,16 @@ secretwallet <command> -h
                             dest = 'value',
                             help='The value to store in the session',
                             default='not set')                
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Starting a secret wallet session with parameters %s'%args)
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
+        iou.my_output('Starting a secret wallet session with parameters %s'%args)
         try:
             start_my_session(args.value, args.lifetime, args.timeout)
         except Exception as e:
-            my_output(repr(e))
+            iou.my_output(repr(e))
             
             
     def client(self):
@@ -364,96 +471,24 @@ secretwallet <command> -h
                             dest = 'value',
                             help='The value to store in the session',
                             default='not set')                
-        args = parser.parse_args(sys.argv[2:])
-        my_output('Starting a secret wallet client with parameters %s'%args)
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+    
+        iou.my_output('Starting a secret wallet client with parameters %s'%args)
         try:
             if args.action == 'get':
-                my_output((get_session_password()[0],'***'))
+                iou.my_output((get_session_password()[0],'***'))
             elif args.action == 'set':
                 set_session_password(args.value)
             elif args.action == 'stop':
                 stop_service()
             elif args.action == 'test':
                 if is_connected():
-                    my_output('connected')
+                    iou.my_output('connected')
                 else:
-                    my_output('not connected') 
+                    iou.my_output('not connected') 
         except Exception as e:
-            my_output(repr(e))
+            iou.my_output(repr(e))
             
-def display_reconfiguration_warning():
-    "Display a warning when reconfiguring the system"
-    print("*******************************************************************")
-    print("""
-  You are performing a reconfiguration of the secrets' remote 
-  table. This is because you are either changing the memorable-
-  or the device password. This will result in all of your
-  secrets being re-encrypted with the new password. You will
-  not be able to retrieve them with the old keys.
-  This operation takes time, depending on how large is the
-  table. Be patient!
-  A backup of the original table is performed, in case you need 
-  to roll back the table.
-  You can manage your time-stamped backups from the AWS
-  Management console or using the secret-wallet command line.
-          """)
-    print("*******************************************************************") 
-    answ = input("\nDo you want to go ahead? (yes|no) ")
-    if answ.lower().startswith('y'):
-        return
-    else:
-        exit(1)                          
-            
-            
-def display_secret(secret):
-    "Print a secret in a fixed format"
-    print("**********************************************************")
-    print("Secret id:")
-    print(f"domain              : {secret['domain']}")
-    print(f"access              : {secret['access']}")
-    print("\nSecret credentials:")
-    print(f"login               : {secret['uid']}")
-    print(f"password            : {secret['pwd']}")
-    if 'info' in secret: 
-        print("\nSecret extra info:")
-        for k,v in secret['info'].items():
-            print(f"{k:20}: {v}")
-    print(f"\nLast updated        : {secret['timestamp']}")
-    print("**********************************************************")
-    
-    
-def display_list(message, secrets):
-    field_lenght = max([len(x[0]) for x in secrets])+5
-    format_header = f"<%-{field_lenght-1}s:<access>"
-    format_record = f"%-{field_lenght}s:%s"
-    print("**********************************************************")
-    print(f"{message}:")
-    print(format_header%'domain>')
-    for d,a in secrets:
-        print(format_record%(d,a))
-    print("**********************************************************")        
-    
-def confirm_delete(secrets):
-    "Confirm secrets to delete"
-    display_list("Secrets to delete", secrets)
-    answ = my_input("\nDo you want to delete these secrets (yes|no) ")
-    if not answ.lower().startswith('y'):
-        exit(1)
-        
-def confirm_rename(secrets):
-    "Confirm secret to rename"
-    display_list("Secret to rename", secrets)
-    answ = my_input("\nDo you want to rename this secret (yes|no) ")
-    if not answ.lower().startswith('y'):
-        exit(1)            
-        
-def my_input(question):
-    "Mockable input function"
-    return input(question)
-
-def my_output(message, want_exit=False):
-    "Mockable output function"
-    logger.info(message)
-    print(message)
-    if want_exit:
-        exit(1)
