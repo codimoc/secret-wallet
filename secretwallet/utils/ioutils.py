@@ -9,10 +9,10 @@ logger = get_logger(__name__, logging.DEBUG)
 
 def display_list(message, secrets):
     field_lenght = max([len(x[0]) for x in secrets], default=0)+5
-    format_header = f"<%-{field_lenght-1}s:<access>"
-    format_record = f"%-{field_lenght}s:%s"
+    format_header = f"<%-{field_lenght-1}s: <access>"
+    format_record = f"%-{field_lenght}s: %s"
     print("**********************************************************")
-    print(f"{message}:")
+    print(f"{message}: ")
     print(format_header%'domain>')
     for d,a in secrets:
         print(format_record%(d,a))

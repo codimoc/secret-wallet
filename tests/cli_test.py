@@ -150,6 +150,87 @@ def test_rename_secret(set_up):
     assert du.has_secret(new_domain, new_access)
     du.delete_secret(new_domain, new_access)
     
+@pytest.mark.integration
+def test_query_by_domain(set_up):
+    domain1 = 'pera'
+    access1 = "cotta"
+    domain2 = 'bella'
+    access2 = 'pera'
+    
+    sleep(1)
+    #delete first
+    du.delete_secret(domain1, access1)
+    du.delete_secret(domain2, access2)
+    #then set   
+    sys.argv=['secret_wallet','set','-d',domain1, '-a', access1]
+    Parser()
+    sys.argv=['secret_wallet','set','-d',domain2, '-a', access2]
+    Parser()
+    assert du.has_secret(domain1, access1)
+    assert du.has_secret(domain2, access2)
+    
+    #now querying by domain
+    sys.argv=['secret_wallet','query','-d','pera']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert "cotta" in buf.getvalue()
+        assert "bella" not in buf.getvalue()
+        
+@pytest.mark.integration
+def test_query_by_access(set_up):
+    domain1 = 'pera'
+    access1 = "cotta"
+    domain2 = 'bella'
+    access2 = 'pera'
+    
+    sleep(1)
+    #delete first
+    du.delete_secret(domain1, access1)
+    du.delete_secret(domain2, access2)
+    #then set   
+    sys.argv=['secret_wallet','set','-d',domain1, '-a', access1]
+    Parser()
+    sys.argv=['secret_wallet','set','-d',domain2, '-a', access2]
+    Parser()
+    assert du.has_secret(domain1, access1)
+    assert du.has_secret(domain2, access2)
+    
+    #now querying by domain
+    sys.argv=['secret_wallet','query','-a','pera']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert "cotta" not in buf.getvalue()
+        assert "bella" in buf.getvalue()
+        
+@pytest.mark.integration
+def test_query_by_pattern(set_up):
+    domain1 = 'pera'
+    access1 = "cotta"
+    domain2 = 'bella'
+    access2 = 'pera'
+    
+    sleep(1)
+    #delete first
+    du.delete_secret(domain1, access1)
+    du.delete_secret(domain2, access2)
+    #then set   
+    sys.argv=['secret_wallet','set','-d',domain1, '-a', access1]
+    Parser()
+    sys.argv=['secret_wallet','set','-d',domain2, '-a', access2]
+    Parser()
+    assert du.has_secret(domain1, access1)
+    assert du.has_secret(domain2, access2)
+    
+    #now querying by domain
+    sys.argv=['secret_wallet','query','pera']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        assert "cotta" in buf.getvalue()
+        assert "bella" in buf.getvalue()        
+        
+    
+    
+    
 def test_rename_secret_no_new_values(set_up):
     sleep(1)
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']

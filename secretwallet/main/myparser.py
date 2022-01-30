@@ -16,7 +16,7 @@ from secretwallet.session.service import start_my_session
 from secretwallet.utils.cryptutils import encrypt_key
 from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets, \
                                        update_secret, delete_secret, delete_secrets, rename_secret, \
-                                       reconf_memorable, reconf_salt_key, query_secrets
+                                       reconf_memorable, reconf_salt_key, query_secrets_by_field, query_secrets_by_pattern
 from secretwallet.utils.logging import get_logger                                    
 
 import pkg_resources as pkg
@@ -268,7 +268,12 @@ class Parser(object):
         parser.add_argument('-a',
                             '--access',
                             default=None,
-                            help='A substring to query the access. Only secrets with this substring in their access are returned')        
+                            help='A substring to query the access. Only secrets with this substring in their access are returned')
+        
+        parser.add_argument('pattern',
+                            nargs='?',
+                            default=None,
+                            help='A pattern that is search both in the domain and the access field')
 
         args = iou.my_parse(parser,sys.argv[2:])
         if args is None:
@@ -276,7 +281,10 @@ class Parser(object):
 
         iou.my_output('Query secrets with arguments %s' % args)
         try:
-            secrets = query_secrets(args.domain, args.access)
+            if (args.pattern is not None):
+                secrets = query_secrets_by_pattern(args.pattern)
+            else:
+                secrets = query_secrets_by_field(args.domain, args.access)
             iou.display_list("List of secrets", secrets)
         except Exception as e:
             iou.my_output(repr(e))            

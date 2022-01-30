@@ -279,7 +279,7 @@ def list_secrets(domain):
     
     return secrets
 
-def query_secrets(domain_sub, access_sub):
+def query_secrets_by_field(domain_sub, access_sub):
     """Query all secrets with domain and access containing the domain or access substrings
     input:
     domain_sub  the substring to be looked for in the domain keys
@@ -291,6 +291,19 @@ def query_secrets(domain_sub, access_sub):
     filter_secrets = lambda s:(domain_sub is None or domain_sub.lower() in s[0].lower())\
                                and\
                                (access_sub is None or access_sub.lower() in s[1].lower())
+    return [s for s in secrets if filter_secrets(s)]
+
+def query_secrets_by_pattern(pattern):
+    """Query all secrets with domain or access containing the pattern substrings
+    input:
+    pattern  the substring to be looked for in the domain or access field
+    output:
+    a list of (domain, access) tuples
+    """
+    secrets = list_secrets(None)
+    lpt = pattern.lower()
+    filter_secrets = lambda s: pattern is None or lpt in s[0].lower() or lpt in s[1].lower()
+
     return [s for s in secrets if filter_secrets(s)]
     
 def reconf_memorable(secrets, old_mem, new_mem, backup=False):

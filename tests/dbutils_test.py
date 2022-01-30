@@ -368,25 +368,25 @@ def test_reconf_salt_key(set_up, insert_records):
 def test_query_records(set_up, insert_records):
     #test with no filter
     ns = du.count_secrets()
-    secrets = du.query_secrets(None, None)
+    secrets = du.query_secrets_by_field(None, None)
     assert ns == len(secrets)
     
     #test filter on domain with a d   
-    secrets = du.query_secrets("d", None)
+    secrets = du.query_secrets_by_field("d", None)
     assert 3 == len(secrets)
     
     #tets filter on domain with a 1
-    secrets = du.query_secrets("1", None)
+    secrets = du.query_secrets_by_field("1", None)
     assert 2 == len(secrets)
     
     #test filter domain with an x
-    secrets = du.query_secrets("x", None)
+    secrets = du.query_secrets_by_field("x", None)
     assert 0 == len(secrets)
     
     #test filter on access with a 1 in it
-    secrets = du.query_secrets(None, "1")
+    secrets = du.query_secrets_by_field(None, "1")
     assert 1 == len(secrets)
     
     #test on both
-    secrets = du.query_secrets("1", "2")
+    secrets = du.query_secrets_by_field("1", "2")
     assert 1 == len(secrets)    
