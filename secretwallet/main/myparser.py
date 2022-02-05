@@ -22,6 +22,7 @@ from secretwallet.utils.logging import get_logger
 import pkg_resources as pkg
 import secretwallet.utils.ioutils as iou 
 import secretwallet.utils.password_manager as pm
+from docutils.nodes import description
 
 
 logger = get_logger(__name__)
@@ -91,9 +92,15 @@ class Parser(object):
                 
         
     def set(self):
+        """ 
+            Add or change a secret in the wallet. This could be an entire new secret, with all the information passed inline
+            or an update of an existing secret. What is set with this command determines the content of a secret, identified
+            by the domain, access pair. Key values pairs, as defined by the -ik and -iv options, can be added incrementally
+            by multiple calls to the set command.
+        """
         parser = argparse.ArgumentParser(
-            description='Insert a new secret',
-            prog='secretwallet set')
+            description=self.set.__doc__,
+            prog='secret_wallet set')
         #required arguments
         parser.add_argument('-d',
                             dest='domain',
@@ -138,9 +145,13 @@ class Parser(object):
             iou.my_output(repr(e))
         
     def get(self):
+        """
+            Retrieves the information stored inside a secret, as identified by the domain, access pair. These two fields need
+            to be passed by using the -d and -a options
+        """
         parser = argparse.ArgumentParser(
-            description='Retrieves a secret',
-            prog='secretwallet get')
+            description=self.get.__doc__,
+            prog='secret_wallet get')
         #required arguments
         parser.add_argument('-d',
                             dest='domain',
@@ -165,9 +176,14 @@ class Parser(object):
             iou.my_output(repr(e))
             
     def delete(self):
+        """
+            Deletes an existing secret, as identified by the domain, access pair. These two fields can
+            be passed by using the -d and -a options. If only the domain is given, all secrets for that domain
+            are deleted.        
+        """
         parser = argparse.ArgumentParser(
-            description='Removes a secret',
-            prog='secretwallet delete')
+                              description=self.delete.__doc__,
+                              prog='secret_wallet delete')
         #required arguments
         parser.add_argument('-d',
                             dest='domain',
@@ -194,9 +210,13 @@ class Parser(object):
             iou.my_output(repr(e))            
 
     def rename(self):
+        """
+           Renames a secret, as identified by the domain, access pair. A new domain name can be passed with the -nd option and a new access 
+           name can be passed with the -na option. Both domain and access can be changed at the same time or on their own.
+        """
         parser = argparse.ArgumentParser(
-            description='Renames a secret',
-            prog='secretwallet rename')
+            description=self.rename.__doc__,
+            prog='secret_wallet rename')
         #required arguments
         parser.add_argument('-d',
                             dest='domain',
@@ -237,9 +257,13 @@ class Parser(object):
             iou.my_output(repr(e))
 
     def list(self):
+        """
+           List a set of secrets. With no option passed, all secrets are returned. Alternatively it is possible to filter secrets by
+           passing a domain name: all secrets for that domain will be returned.
+        """
         parser = argparse.ArgumentParser(
-            description='Lists all secrets in a given domain',
-            prog='secretwallet list')
+            description=self.list.__doc__,
+            prog='secret_wallet list')
         #optional arguments
         parser.add_argument('-d',
                             '--domain',
@@ -257,9 +281,14 @@ class Parser(object):
             iou.my_output(repr(e))
             
     def query(self):
+        """
+           Searches for secrets containig a given subtext in either their domain or access names, or both. By using the explicit -d and -a 
+           options, it is possible to limit the search to domain names or access names only. Alternatively it is possible to pass a subtext
+           without any specification in front (i.e. without -d or -a) and the search of that pattern will include both domain and access names.
+        """
         parser = argparse.ArgumentParser(
-            description='Query or filter the list of secrets by domain or access name',
-            prog='secretwallet query')
+            description=self.query.__doc__,
+            prog='secret_wallet query')
         #optional arguments
         parser.add_argument('-d',
                             '--domain',
@@ -273,7 +302,7 @@ class Parser(object):
         parser.add_argument('pattern',
                             nargs='?',
                             default=None,
-                            help='A pattern that is search both in the domain and the access field')
+                            help='A pattern that is searched both in the domain and the access field')
 
         args = iou.my_parse(parser,sys.argv[2:])
         if args is None:
@@ -290,9 +319,16 @@ class Parser(object):
             iou.my_output(repr(e))            
             
     def conf(self):
+        """
+           Configures some parameters for this application. It is possible to list all parameters with the -l option,
+           or to configure the timeout and lifetime (in seconds). The timeout is the amount of time in second for which the memorable
+           password is remembered without been asked again. The lifetime determines the lifetime of the background
+           process that manages the temporary storage of the memorable password. The value of the lifetime parameter should be bigger
+           than the value of the password timeout. 
+        """
         parser = argparse.ArgumentParser(
-            description='Manage the configuration parameters',
-            prog='secretwallet conf')
+            description=self.conf.__doc__,
+            prog='secret_wallet conf')
         #optional arguments
         parser.add_argument('-l',
                             '--list',
@@ -333,9 +369,14 @@ class Parser(object):
             iou.my_output(repr(e))
             
     def reconf(self):
+        """
+           Reconfigures either the memorable or the device password. All secrets will be re-encryted with the changed password.
+           It is not possible to change both passwords at the same time. Depending on the size of the wallet, this operation
+           might take some time. A backup of the old table is also performed. 
+        """
         parser = argparse.ArgumentParser(
-            description='Change the secret encryption because of a change of memorable or device password',
-            prog='secretwallet reconf')
+            description=self.reconf.__doc__,
+            prog='secret_wallet reconf')
         #optional arguments
         parser.add_argument('-m',
                             '--memorable',
@@ -352,9 +393,11 @@ class Parser(object):
         if args is None:
             return
 
-        iou.my_output('Running reconf for domain %s and access %s' %(args.domain,args.access))
         try:
-            if args.memorable:
+            if args.memorable and args.device:
+                print("You can't reconfigure both memorable and device password at the same time")
+            elif args.memorable:
+                iou.my_output("You are reconfiguring the memorable password")
                 if is_connected():
                     stop_service()
                 iou.display_reconfiguration_warning()
@@ -365,6 +408,7 @@ class Parser(object):
                 new_memorable, _ = pm.get_memorable_password(True)
                 reconf_memorable(list_secrets(None), old_memorable, new_memorable, True)
             elif args.device:
+                iou.my_output("You are reconfiguring the device password")
                 if is_connected():
                     stop_service()
                 iou.display_reconfiguration_warning()
@@ -435,9 +479,15 @@ class Parser(object):
                 continue                   
                            
     def session(self):
+        """
+           Starts a background session for keeping track of the memorable password for a short while. This is only for testing
+           since this process is started automatically when needed by the secret_wallet. The lifetime parameter sets the lifetime of
+           the session in seconds, the timeout the time in second for which the memorable password is kept, and the value is what
+           has to be remembered
+        """
         parser = argparse.ArgumentParser(
-            description='Starts a secretwallet session service',
-            prog='secretwallet session')
+            description=self.session.__doc__,
+            prog='secret_wallet session')
         #optional arguments
         parser.add_argument('-l',
                             dest = 'lifetime',
@@ -466,8 +516,11 @@ class Parser(object):
             
             
     def client(self):
+        """ Client command to invoke the background session. This is for testing only. The action allows to get the session value,
+            set the value, stop the background session and test if it is running
+        """
         parser = argparse.ArgumentParser(
-            description='Starts a secretwallet client',
+            description=self.client.__doc__,
             prog='secretwallet client')
         #optional arguments
         parser.add_argument('-a',
