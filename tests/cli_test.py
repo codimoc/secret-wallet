@@ -226,7 +226,103 @@ def test_query_by_pattern(set_up):
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert "cotta" in buf.getvalue()
-        assert "bella" in buf.getvalue()        
+        assert "bella" in buf.getvalue()
+        
+        
+@pytest.mark.integration
+def test_qget_first_secret(set_up):
+    domain1 = 'pera'
+    access1 = "cotta"
+    domain2 = 'bella'
+    access2 = 'pera'
+    
+    #when the list of secrete is returned they are ordered alphabetically
+    #by domain, access. Hence the first secret is bella,pera, or the second record here
+    
+    sleep(1)
+    #delete first
+    du.delete_secret(domain1, access1)
+    du.delete_secret(domain2, access2)
+    #then set   
+    sys.argv=['secret_wallet','set','-d',domain1, '-a', access1, '-ik', 'idx', '-iv','second record']
+    Parser()
+    sys.argv=['secret_wallet','set','-d',domain2, '-a', access2, '-ik', 'idx', '-iv','first record']
+    Parser()
+    assert du.has_secret(domain1, access1)
+    assert du.has_secret(domain2, access2)
+    
+    #now running a qget command with some mockable input
+    iou.my_input = iou.MockableInput(["1"])    
+    sys.argv=['secret_wallet','qget','pera']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        sleep(1)
+        assert "first record" in buf.getvalue() #get the inner value in the secret 
+        assert "second record" not in buf.getvalue()
+        
+        
+@pytest.mark.integration
+def test_qget_second_secret(set_up):
+    domain1 = 'pera'
+    access1 = "cotta"
+    domain2 = 'bella'
+    access2 = 'pera'
+    
+    #when the list of secrete is returned they are ordered alphabetically
+    #by domain, access. Hence the first secret is bella,pera, or the second record here
+    
+    sleep(1)
+    #delete first
+    du.delete_secret(domain1, access1)
+    du.delete_secret(domain2, access2)
+    #then set   
+    sys.argv=['secret_wallet','set','-d',domain1, '-a', access1, '-ik', 'idx', '-iv','second record']
+    Parser()
+    sys.argv=['secret_wallet','set','-d',domain2, '-a', access2, '-ik', 'idx', '-iv','first record']
+    Parser()
+    assert du.has_secret(domain1, access1)
+    assert du.has_secret(domain2, access2)
+    
+    #now running a qget command with some mockable input
+    iou.my_input = iou.MockableInput(["2"])    
+    sys.argv=['secret_wallet','qget','pera']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        sleep(1)
+        assert "first record" not in buf.getvalue() #get the inner value in the secret 
+        assert "second record" in buf.getvalue()
+        
+@pytest.mark.integration
+def test_qget_wrong_input(set_up):
+    domain1 = 'pera'
+    access1 = "cotta"
+    domain2 = 'bella'
+    access2 = 'pera'
+    
+    #when the list of secrete is returned they are ordered alphabetically
+    #by domain, access. Hence the first secret is bella,pera, or the second record here
+    
+    sleep(1)
+    #delete first
+    du.delete_secret(domain1, access1)
+    du.delete_secret(domain2, access2)
+    #then set   
+    sys.argv=['secret_wallet','set','-d',domain1, '-a', access1, '-ik', 'idx', '-iv','second record']
+    Parser()
+    sys.argv=['secret_wallet','set','-d',domain2, '-a', access2, '-ik', 'idx', '-iv','first record']
+    Parser()
+    assert du.has_secret(domain1, access1)
+    assert du.has_secret(domain2, access2)
+    
+    #now running a qget command with some mockable input
+    iou.my_input = iou.MockableInput(["string"])    
+    sys.argv=['secret_wallet','qget','pera']
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        sleep(1)
+        assert "first record" not in buf.getvalue() #get the inner value in the secret 
+        assert "second record" not in buf.getvalue()
+        assert "I need a number"  in buf.getvalue()                     
         
     
     
@@ -300,7 +396,7 @@ def test_shell_set_help(set_up):
     sys.argv=['secret_wallet','shell']
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
-        assert 'usage: secretwallet set' in buf.getvalue()
+        assert 'usage: secret_wallet set' in buf.getvalue()
 
 def test_shell_set_get_delete(set_up):
     password = 'Arz12@gh67!caz'
