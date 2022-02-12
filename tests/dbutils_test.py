@@ -259,6 +259,36 @@ def test_update_missing_secret_no_effect(set_up):
         du.delete_secret(domain, access)
         
 @pytest.mark.integration        
+def test_update_info_dict_remove_key(set_up):
+    m_pwd = u"memorabile"
+    domain = u"my_domain" 
+    access = u"my_access" 
+    secret_info = {'key1': 'value1',
+                   'key2': 'value2'}
+    salt = parameters.get_salt_key()
+    try:
+        ns = du.count_secrets()
+        du.insert_secret(domain, access, None, None, secret_info, m_pwd, parameters.get_salt_key())
+        assert ns + 1 == du.count_secrets()
+        res = du.get_secret(domain, access, m_pwd, salt, False) #no decryption of secret
+        old_ts = res['timestamp']
+        info = res['info']
+        assert 2 == len(info)
+        
+        del info['key2'] #remove one entry
+        du.update_secret_info_dictionary(domain, access, info)
+        res = du.get_secret(domain, access, m_pwd, salt)
+        ts = res['timestamp']
+        info = res['info']
+        assert 1 == len(info)
+        assert 'value1' == info['key1']
+        assert ts != old_ts
+        
+    finally:
+        du.delete_secret(domain, access)        
+        
+        
+@pytest.mark.integration        
 def test_has_table(set_up):
     assert True  == du.has_table(parameters.get_table_name())
     assert False == du.has_table('new_table')

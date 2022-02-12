@@ -10,7 +10,7 @@ import sys
 from boto3.dynamodb.conditions import Key
 from datetime import datetime
 from secretwallet.constants import parameters
-from secretwallet.utils.cryptutils import encrypt, decrypt, encrypt_key
+from secretwallet.utils.cryptutils import encrypt, encrypt_key, decrypt
 from secretwallet.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -145,8 +145,10 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt=
     if salt is None:
         salt = parameters.get_salt_key()
     timestamp = datetime.now().isoformat()
+    # #domain is the simbolyc field name and maps table column 'domain' to id #domain
     expression_attributes = {'#domain':'domain',
                              '#access':'access'}
+    # :domain is the symbolic value to be used in expressions for domain
     expression_values = {':domain':domain,
                          ':access':access}
     update_expression = "SET"
@@ -181,6 +183,37 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt=
                                  )
     except:
         pass #the condition failed but there should be no side effect
+    
+def update_secret_info_dictionary(domain, access, enc_info):
+    """Update the info dictionary of a secret
+    input:
+    domain     the domain, i.e. logical context, of the secret
+    access     the secret sub-domain or access specification
+    enc_info   the new info dictionary (encrypted) to replace the old one
+    """
+    
+    timestamp = datetime.now().isoformat()
+    expression_attributes = {'#domain':'domain',
+                             '#access':'access',
+                             '#info': 'info',
+                             '#timestamp':'timestamp'}
+    expression_values = {':domain':domain,
+                         ':access':access,
+                         ':info': enc_info,
+                         ':ts': timestamp}
+    update_expression = "SET #info = :info, #timestamp = :ts"
+    condition_expression = "#domain = :domain AND #access = :access"
+        
+    try:    
+        _get_table().update_item(Key={"domain": domain, "access": access},
+                                 ExpressionAttributeNames  = expression_attributes,
+                                 ExpressionAttributeValues = expression_values,
+                                 UpdateExpression          = update_expression,
+                                 ConditionExpression       = condition_expression 
+                                 )
+    except:
+        pass #the condition failed but there should be no side effect    
+    
 
 def rename_secret(domain, access, new_domain, new_access):
     """Rename the domain and access of a secret
@@ -237,13 +270,14 @@ def delete_secrets(secrets):
     for s in secrets:
         delete_secret(s[0], s[1])
 
-def get_secret(domain, access, mem_pwd, salt=None):
+def get_secret(domain, access, mem_pwd, salt=None, need_decrypt=True):
     """Retrieves a secret by primary key
     input:
-    domain     the domain, i.e. logical context, of the secret
-    access     the secret sub-domain or access specification
-    mem_pwd    memorable password to encrypt the secret
-    salt       a string representation of the salt (optional)
+    domain          the domain, i.e. logical context, of the secret
+    access          the secret sub-domain or access specification
+    mem_pwd         memorable password to encrypt the secret
+    salt            a string representation of the salt (optional)
+    need_decrypt    a flag to indicate if decryption is required (default True)
     output:
     returns the decrypted secret
     """
@@ -253,6 +287,9 @@ def get_secret(domain, access, mem_pwd, salt=None):
     resp = _get_table().get_item(Key={'domain'  :domain,
                                       'access'  : access})
     ret = resp['Item']
+    if not need_decrypt:
+        return ret
+    
     if 'uid' in ret and ret['uid'] is not None and 'pwd' in ret and ret['pwd'] is not None:
         ret['uid'] = decrypt(ret['uid'], mem_pwd, salt)
         ret['pwd'] = decrypt(ret['pwd'], mem_pwd, salt)

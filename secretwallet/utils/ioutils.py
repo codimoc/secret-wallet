@@ -53,6 +53,12 @@ def confirm_delete(secrets):
     answ = my_input("\nDo you want to delete these secrets (yes|no) ")
     if not answ.lower().startswith('y'):
         exit(1)
+        
+def confirm_delete_key(domain, access, key):
+    "Confirm secrets to delete"
+    answ = my_input(f"Do you want to delete the key {key} for domain {domain} and access {access}? (yes|no) ")
+    if not answ.lower().startswith('y'):
+        exit(1)        
 
 def confirm_rename(secrets):
     "Confirm secret to rename"

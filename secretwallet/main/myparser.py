@@ -14,8 +14,8 @@ from secretwallet.main.configuration import list_configuration, get_configuratio
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
 from secretwallet.session.service import start_my_session
 from secretwallet.utils.cryptutils import encrypt_key
-from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets, \
-                                       update_secret, delete_secret, delete_secrets, rename_secret, \
+from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets, update_secret, \
+                                       update_secret_info_dictionary, delete_secret, delete_secrets, rename_secret, \
                                        reconf_memorable, reconf_salt_key, query_secrets_by_field, query_secrets_by_pattern
 from secretwallet.utils.logging import get_logger
 
@@ -181,7 +181,8 @@ class Parser(object):
         """
             Deletes an existing secret, as identified by the domain, access pair. These two fields can
             be passed by using the -d and -a options. If only the domain is given, all secrets for that domain
-            are deleted.
+            are deleted. When the -ik option is given with a key name, the corresponding entry
+            in the info dictionary is removed, only if both domain and access are given and they identify an existing secret
         """
         parser = argparse.ArgumentParser(
                               description=self.delete.__doc__,
@@ -194,6 +195,9 @@ class Parser(object):
         parser.add_argument('-a',
                             dest ='access',
                             help='The sub=domain (sub-category or access) of the secret')
+        parser.add_argument('-ik',
+                            '--info_key',
+                            help='The key in an information map')        
 
         args = iou.my_parse(parser,sys.argv[2:])
         if args is None:
@@ -201,7 +205,13 @@ class Parser(object):
 
         iou.my_output('Running delete with arguments %s' % args)
         try:
-            if args.access is not None:
+            if args.domain is not None and args.access is not None and args.info_key is not None:
+                iou.confirm_delete_key(args.domain, args.access, args.info_key)
+                sec = get_secret(args.domain, args.access, None, None, False) #no decryption
+                info = sec['info']
+                del info[args.info_key]
+                update_secret_info_dictionary(args.domain, args.access, info)
+            elif args.domain is not None and args.access is not None:
                 iou.confirm_delete([(args.domain, args.access)])
                 delete_secret(args.domain, args.access)
             else:
@@ -323,7 +333,7 @@ class Parser(object):
     def qget(self):
         """
            Searches for secrets containig a given subtext in their domain or access names. Once a list of secrets
-           that match the given pattern are found, they are tagged with a progressive number and the user can
+           that match the given pattern is found, thre secrets are tagged with a progressive number and the user can
            select the one to retrieve and display.
         """
         parser = argparse.ArgumentParser(
@@ -359,8 +369,8 @@ class Parser(object):
     def conf(self):
         """
            Configures some parameters for this application. It is possible to list all parameters with the -l option,
-           or to configure the timeout and lifetime (in seconds). The timeout is the amount of time in second for which the memorable
-           password is remembered without been asked again. The lifetime determines the lifetime of the background
+           or to configure the timeout and lifetime (in seconds). The timeout is the amount of time in seconds along which the memorable
+           password is remembered without been re-asked. The lifetime determines the lifetime of the background
            process that manages the temporary storage of the memorable password. The value of the lifetime parameter should be bigger
            than the value of the password timeout.
         """

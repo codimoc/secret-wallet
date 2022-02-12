@@ -324,7 +324,43 @@ def test_qget_wrong_input(set_up):
         assert "second record" not in buf.getvalue()
         assert "I need a number"  in buf.getvalue()                     
         
+@pytest.mark.integration
+def test_delete_info_item(set_up):
+    domain = 'pera'
+    access = "cotta"
+    key1 = 'bella'
+    value1 = 'pupa'
+    key2 = 'toste'
+    value2 = 'mele'    
+        
+    sleep(1)
+    #delete first
+    du.delete_secret(domain, access)
+    #then set   
+    sys.argv=['secret_wallet','set','-d',domain, '-a', access, '-ik', key1, '-iv', value1]
+    Parser()
+    sys.argv=['secret_wallet','set','-d',domain, '-a', access, '-ik', key2, '-iv',value2]
+    Parser()
+    assert du.has_secret(domain, access)
+        
+    sys.argv=['secret_wallet','get', '-d', domain, '-a', access]
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        sleep(1)
+        assert "pupa" in buf.getvalue() 
+        assert "mele" in buf.getvalue()
     
+    #now remove one item from the dictionary    
+    sys.argv=['secret_wallet','delete', '-d', domain, '-a', access, '-ik', key2]
+    Parser()
+    
+    #check that the item is gone
+    sys.argv=['secret_wallet','get', '-d', domain, '-a', access]
+    with io.StringIO() as buf, redirect_stdout(buf):
+        Parser()
+        sleep(1)
+        assert "pupa" in buf.getvalue() 
+        assert "mele" not in buf.getvalue()            
     
     
 def test_rename_secret_no_new_values(set_up):
