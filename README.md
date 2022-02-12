@@ -36,6 +36,7 @@ Data can be encrypted on a hard drive, but the disk can fail, the phone can be s
 *  [first time configuration](#configuration)
 *  [password strength](#passwords)
 *  [syntax](#syntax)
+*  [commands](#commands)
 *  [usage](#usage)
 *  [the secret wallet session](#session)
 *  [customization of parameters](#customization)
@@ -182,6 +183,26 @@ For example, the options for the *set* command can be displayed by:
     secret_wallet set -h
     
 To avoid possible errors, please remember to enclose the textual arguments within single or double quotes, when these arguments contain spaces or special characters. 
+
+## <a id="commands"></a>Commands
+This section describes the main commands of this application:
+
+*	**set**: Add or change a secret in the wallet. This could be an entire new secret, with all the information passed inline or an update of an existing secret. What is set with this command determines the content of a secret, identified by the domain, access pair. Key values pairs, as defined by the -ik and -iv options, can be added incrementally by multiple calls to the set command.
+*	**get**: Retrieves the information stored inside a secret, as identified by the domain, access pair. These two fields need to be passed by using the -d and -a options.
+*	**delete**: Deletes an existing secret, as identified by the domain, access pair. These two fields can be passed by using the -d and -a options. If only the domain is given, all secrets for that domain are deleted. When the -ik option is given with a key name, the corresponding entry in the info dictionary is removed, only if both domain and access are given and they identify an existing secret.
+*	**rename**: Renames a secret, as identified by the domain, access pair. A new domain name can be passed with the -nd option and a new access name can be passed with the -na option. Both domain and access can be changed at the same time or on their own.
+*	**list**: List a set of secrets. With no option passed, all secrets are returned. Alternatively it is possible to filter secrets by passing a domain name: all secrets for that domain will be returned.
+*	**query**: Searches for secrets containig a given subtext in either their domain or access names, or both. By using the explicit -d and -a options, it is possible to limit the search to domain names or access names only. Alternatively it is possible to pass a subtext without any specification in front (i.e. without -d or -a) and the search of that pattern will include both domain and access names.
+*	**qget**: Searches for secrets containig a given subtext in their domain or access names. Once a list of secrets 
+that match the given pattern is found, the secrets are tagged with a progressive number and the user can select the one to retrieve and display.
+*	**conf**: Configures some parameters for this application. It is possible to list all parameters with the -l option, or to configure the timeout and lifetime (in seconds). The timeout is the amount of time in seconds along which the memorable password is remembered without been re-asked. The lifetime determines the lifetime of the background   process that manages the temporary storage of the memorable password. The value of the lifetime parameter should be bigger than the value of the password timeout.
+*	**reconf**: Reconfigures either the memorable or the device password. All secrets will be re-encryted with the changed password. It is not possible to change both passwords at the same time. Depending on the size of the wallet, this operation might take some time. A backup of the old table is also performed.
+*	**help**: Display the main help.
+*	**version**: Returns the release version number.
+*	**shell**: Works in a separate shell. This is to facilitate usage on a Windows platform, in the absence of backround processes.
+*	**session**: Starts a background session for keeping track of the memorable password for a short while. This is only for testing since this process is started automatically when needed by the secret_wallet. The lifetime parameter sets the lifetime of the session in seconds, the timeout the time in second for which the memorable password is kept, and the value is what has to be remembered.
+*	**client**: Client command to invoke the background session. This is for testing only. The action allows to get the session value, set the value, stop the background session and test if it is running.
+
 
 
 ## <a id="usage"></a>Usage

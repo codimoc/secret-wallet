@@ -259,6 +259,36 @@ def test_update_missing_secret_no_effect(set_up):
         du.delete_secret(domain, access)
         
 @pytest.mark.integration        
+def test_update_info_dict_remove_key(set_up):
+    m_pwd = u"memorabile"
+    domain = u"my_domain" 
+    access = u"my_access" 
+    secret_info = {'key1': 'value1',
+                   'key2': 'value2'}
+    salt = parameters.get_salt_key()
+    try:
+        ns = du.count_secrets()
+        du.insert_secret(domain, access, None, None, secret_info, m_pwd, parameters.get_salt_key())
+        assert ns + 1 == du.count_secrets()
+        res = du.get_secret(domain, access, m_pwd, salt, False) #no decryption of secret
+        old_ts = res['timestamp']
+        info = res['info']
+        assert 2 == len(info)
+        
+        del info['key2'] #remove one entry
+        du.update_secret_info_dictionary(domain, access, info)
+        res = du.get_secret(domain, access, m_pwd, salt)
+        ts = res['timestamp']
+        info = res['info']
+        assert 1 == len(info)
+        assert 'value1' == info['key1']
+        assert ts != old_ts
+        
+    finally:
+        du.delete_secret(domain, access)        
+        
+        
+@pytest.mark.integration        
 def test_has_table(set_up):
     assert True  == du.has_table(parameters.get_table_name())
     assert False == du.has_table('new_table')
@@ -368,25 +398,25 @@ def test_reconf_salt_key(set_up, insert_records):
 def test_query_records(set_up, insert_records):
     #test with no filter
     ns = du.count_secrets()
-    secrets = du.query_secrets(None, None)
+    secrets = du.query_secrets_by_field(None, None)
     assert ns == len(secrets)
     
     #test filter on domain with a d   
-    secrets = du.query_secrets("d", None)
+    secrets = du.query_secrets_by_field("d", None)
     assert 3 == len(secrets)
     
     #tets filter on domain with a 1
-    secrets = du.query_secrets("1", None)
+    secrets = du.query_secrets_by_field("1", None)
     assert 2 == len(secrets)
     
     #test filter domain with an x
-    secrets = du.query_secrets("x", None)
+    secrets = du.query_secrets_by_field("x", None)
     assert 0 == len(secrets)
     
     #test filter on access with a 1 in it
-    secrets = du.query_secrets(None, "1")
+    secrets = du.query_secrets_by_field(None, "1")
     assert 1 == len(secrets)
     
     #test on both
-    secrets = du.query_secrets("1", "2")
+    secrets = du.query_secrets_by_field("1", "2")
     assert 1 == len(secrets)    
