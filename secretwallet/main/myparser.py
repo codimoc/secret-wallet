@@ -44,6 +44,7 @@ The list of secretwallet commands are:
    help            print the main help page
    version         the version of this package
    shell           starts a secret_wallet sheel for interctive queries
+   dump            dump all secrets to a file
    ....
 
 For individual help type:
@@ -65,6 +66,7 @@ The list of secretwallet commands are:
    help            print the main help page
    version         the version of this package
    quit            terminate the interactive shell
+   dump            dump all secrets to a file
    ....
 
 For individual help type:
@@ -81,7 +83,7 @@ class Parser(object):
                             action='store',
                             choices=['set','get','delete', 'rename', 'list', 'conf',
                                      'query','qget','reconf','help','session','client',
-                                     'version', 'shell'],
+                                     'version', 'shell', 'dump'],
                             help='Command to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
@@ -488,7 +490,7 @@ class Parser(object):
         parser.add_argument('command',
                             action='store',
                             choices=['set','get','delete', 'rename', 'list', 'conf',
-                                     'query','qget','reconf','help','session','quit'],
+                                     'query','qget','reconf','help','session','quit','dump'],
                             help='Command to run inside the shell')
         iou.my_output('Starting a secret_wallet interactive shell. Type quit to quit, help for help')
         parameters.set_in_shell(True)
@@ -600,3 +602,29 @@ class Parser(object):
                     iou.my_output('not connected')
         except Exception as e:
             iou.my_output(repr(e))
+            
+    def dump(self):
+        """ Dumps all secrets to a flat file, designated by the option -f.
+            If the -e flag is used, the file is encrypted with the same password and salt as all the secrets.
+            When the flag is not set the file is not encrypted,
+        """
+        parser = argparse.ArgumentParser(
+            description=self.dump.__doc__,
+            prog='secretwallet dump')
+        #optional arguments
+        parser.add_argument('-f',
+                            dest='file',
+                            required=True,
+                            help='The output file')        
+        parser.add_argument('-e',
+                            dest = 'encryption',
+                            action = 'store_true',
+                            default = False,
+                            help='A boolean flag to indicate that encryption is required')
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        if args is None:
+            return
+
+        iou.my_output('Starting a secret wallet client with parameters %s'%args)
+        pass

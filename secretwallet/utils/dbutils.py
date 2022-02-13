@@ -316,6 +316,18 @@ def list_secrets(domain):
 
     return secrets
 
+def get_all_secrets(mem_pwd):
+    """Get all secrets and return them as a list of disctionaries
+    input:
+    mem_pwd    the memorable password
+    output:
+    a list of secrets (each secret is a dictionary)
+    """
+    secrets = []
+    for s in list_secrets(None):
+        secrets.append(get_secret(s[0], s[1], mem_pwd))
+    return secrets
+
 def query_secrets_by_field(domain_sub, access_sub):
     """Query all secrets with domain and access containing the domain or access substrings
     input:

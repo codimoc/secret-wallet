@@ -362,7 +362,7 @@ def test_delete_info_item(set_up):
         assert "pupa" in buf.getvalue() 
         assert "mele" not in buf.getvalue()            
     
-    
+@pytest.mark.integration    
 def test_rename_secret_no_new_values(set_up):
     sleep(1)
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
@@ -371,7 +371,8 @@ def test_rename_secret_no_new_values(set_up):
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert "No new keys have been passed" in buf.getvalue()
-        
+
+@pytest.mark.integration        
 def test_rename_secret_same_values(set_up):
     sleep(1)
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
@@ -380,7 +381,8 @@ def test_rename_secret_same_values(set_up):
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert "Both new values are the same as the originals: nothing to do" in buf.getvalue()            
-           
+
+@pytest.mark.integration           
 def test_rename_secret_wrong_values(set_up):
     sleep(1)
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
@@ -389,14 +391,15 @@ def test_rename_secret_wrong_values(set_up):
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert "Could not find the secret to rename" in buf.getvalue() 
-        
+
+@pytest.mark.integration        
 def test_conf_list(set_up):
     sys.argv=['secret_wallet','conf','-l']
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert "secret wallet configuration is located" in buf.getvalue()
         
-
+@pytest.mark.integration
 def test_wrong_salt(set_up):
     my_access = 'another'
     other_key = cu.encrypt_key('pirillo')
@@ -408,6 +411,7 @@ def test_wrong_salt(set_up):
         Parser()
         assert 'InvalidToken' in buf.getvalue()
 
+@pytest.mark.integration
 def test_wrong_memorable_password(set_up):
     my_access = 'another'
     sleep(1)
@@ -426,6 +430,7 @@ def test_wrong_memorable_password(set_up):
     finally:
         du.delete_secret(DOMAIN,my_access)
 
+@pytest.mark.integration
 def test_shell_set_help(set_up):
     #mocking input to pass a 'set -h' command in a shell
     iou.my_input = iou.MockableInput(['set -h','quit'])
@@ -434,6 +439,7 @@ def test_shell_set_help(set_up):
         Parser()
         assert 'usage: secret_wallet set' in buf.getvalue()
 
+@pytest.mark.integration
 def test_shell_set_get_delete(set_up):
     password = 'Arz12@gh67!caz'
     #mocking password retrieval
@@ -452,6 +458,7 @@ def test_shell_set_get_delete(set_up):
     #now check it is not there any longer
     assert not du.has_secret('shell_test','test')
 
+@pytest.mark.integration
 def test_shell_set_rename_get_delete(set_up):
     password = 'Arz12@gh67!caz'
     #mocking password retrieval

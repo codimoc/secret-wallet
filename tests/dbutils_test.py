@@ -419,4 +419,26 @@ def test_query_records(set_up, insert_records):
     
     #test on both
     secrets = du.query_secrets_by_field("1", "2")
-    assert 1 == len(secrets)    
+    assert 1 == len(secrets)
+    
+def test_get_all_secrets(set_up, insert_records):
+    secrets = du.get_all_secrets('memorable')
+    assert 3 == len(secrets)
+    assert 'd1' == secrets[0]['domain']
+    assert 'a1' == secrets[0]['access']
+    assert 'u1' == secrets[0]['uid']
+    assert 'p1' == secrets[0]['pwd']
+    assert 'v1' == secrets[0]['info']['k1']
+    assert 'v2' == secrets[0]['info']['k2']
+    assert 'd1' == secrets[1]['domain']
+    assert 'a2' == secrets[1]['access']
+    assert 'u2' == secrets[1]['uid']
+    assert 'p2' == secrets[1]['pwd']
+    assert 'v3' == secrets[1]['info']['k3']
+    assert 'd2' == secrets[2]['domain']
+    assert 'a3' == secrets[2]['access']
+    assert 'u3' == secrets[2]['uid']
+    assert 'p3' == secrets[2]['pwd']
+    assert 'v4' == secrets[2]['info']['k4']    
+        
+        
