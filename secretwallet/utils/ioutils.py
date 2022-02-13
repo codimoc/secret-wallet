@@ -3,7 +3,6 @@ import logging
 
 from secretwallet.constants import parameters
 from secretwallet.utils.logging import get_logger
-from google.protobuf.internal.test_bad_identifiers_pb2 import message
 
 
 logger = get_logger(__name__, logging.DEBUG)
