@@ -28,7 +28,7 @@ old_getpass = iou.my_getpass
  
 
 @pytest.fixture
-def set_up():
+def cli_test_set_up():
     #mocking the user input
     iou.my_input  = lambda _:'yes'
     iou.my_output = lambda message,_=False: print(message)
@@ -37,10 +37,14 @@ def set_up():
     conf_file = os.path.join(path,'data','test_integration.json')
     conf_data = get_configuration(conf_file)
     parameters.set_data(conf_data) 
-    du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM)
-    
-    p =Process(target=my_session, args =(MEM, 60, 10))
+    if is_connected():
+        stop_service()   
+    p =Process(target=my_session, args =(MEM, 120, 30))
     p.start()
+
+    du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM)
+    sleep(1)
+
        
     yield conf_file
             
@@ -57,7 +61,7 @@ def set_up():
     
 
 @pytest.mark.integration
-def test_help(set_up):
+def test_help(cli_test_set_up):
     sys.argv=['secret_wallet','help']
     #output redirection to string
     with io.StringIO() as buf, redirect_stdout(buf):
@@ -66,7 +70,7 @@ def test_help(set_up):
     
  
 @pytest.mark.integration
-def test_list(set_up):
+def test_list(cli_test_set_up):
     sys.argv=['secret_wallet','list']
     #output redirection to string
     with io.StringIO() as buf, redirect_stdout(buf):
@@ -74,7 +78,7 @@ def test_list(set_up):
         assert "<domain>" in buf.getvalue()
 
 @pytest.mark.integration
-def test_empty_list(set_up):
+def test_empty_list(cli_test_set_up):
     sys.argv=['secret_wallet','list','-d','xxx']
     #output redirection to string
     with io.StringIO() as buf, redirect_stdout(buf):
@@ -86,7 +90,7 @@ def test_empty_list(set_up):
 
 
 @pytest.mark.integration
-def test_list_domain(set_up):
+def test_list_domain(cli_test_set_up):
     sys.argv=['secret_wallet','list','-d',DOMAIN]
     #output redirection to string
     with io.StringIO() as buf, redirect_stdout(buf):
@@ -95,11 +99,10 @@ def test_list_domain(set_up):
 
 
 @pytest.mark.integration
-def test_set_secret(set_up):
+def test_set_secret(cli_test_set_up):
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', 'test_access_2', '-u','x@y','-p','mamma']
     #output redirection to string
     try:
-        sleep(1)
         with io.StringIO() as buf, redirect_stdout(buf):
             Parser()
             du.list_secrets(DOMAIN)
@@ -108,17 +111,15 @@ def test_set_secret(set_up):
         du.delete_secret(DOMAIN,'test_access_2')
         
 @pytest.mark.integration
-def test_get_secret(set_up):
+def test_get_secret(cli_test_set_up):
     sys.argv=['secret_wallet','get','-d',DOMAIN, '-a', ACCESS]
     #output redirection to string
-    sleep(1)
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert ACCESS in buf.getvalue()
         
 @pytest.mark.integration        
-def test_update_info(set_up):
-    sleep(1)
+def test_update_info(cli_test_set_up):
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
     Parser()
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','second_key','-iv','second_value']
@@ -130,11 +131,10 @@ def test_update_info(set_up):
     assert 'second_value' == res['info']['second_key']
     
 @pytest.mark.integration        
-def test_rename_secret(set_up):
+def test_rename_secret(cli_test_set_up):
     new_domain = "new domain_01"
     new_access = "new_access_01"
     
-    sleep(1)
     #delete first
     du.delete_secret(DOMAIN, ACCESS)
     #then set   
@@ -151,13 +151,12 @@ def test_rename_secret(set_up):
     du.delete_secret(new_domain, new_access)
     
 @pytest.mark.integration
-def test_query_by_domain(set_up):
+def test_query_by_domain(cli_test_set_up):
     domain1 = 'pera'
     access1 = "cotta"
     domain2 = 'bella'
     access2 = 'pera'
     
-    sleep(1)
     #delete first
     du.delete_secret(domain1, access1)
     du.delete_secret(domain2, access2)
@@ -177,13 +176,12 @@ def test_query_by_domain(set_up):
         assert "bella" not in buf.getvalue()
         
 @pytest.mark.integration
-def test_query_by_access(set_up):
+def test_query_by_access(cli_test_set_up):
     domain1 = 'pera'
     access1 = "cotta"
     domain2 = 'bella'
     access2 = 'pera'
     
-    sleep(1)
     #delete first
     du.delete_secret(domain1, access1)
     du.delete_secret(domain2, access2)
@@ -203,13 +201,12 @@ def test_query_by_access(set_up):
         assert "bella" in buf.getvalue()
         
 @pytest.mark.integration
-def test_query_by_pattern(set_up):
+def test_query_by_pattern(cli_test_set_up):
     domain1 = 'pera'
     access1 = "cotta"
     domain2 = 'bella'
     access2 = 'pera'
     
-    sleep(1)
     #delete first
     du.delete_secret(domain1, access1)
     du.delete_secret(domain2, access2)
@@ -230,7 +227,7 @@ def test_query_by_pattern(set_up):
         
         
 @pytest.mark.integration
-def test_qget_first_secret(set_up):
+def test_qget_first_secret(cli_test_set_up):
     domain1 = 'pera'
     access1 = "cotta"
     domain2 = 'bella'
@@ -238,8 +235,6 @@ def test_qget_first_secret(set_up):
     
     #when the list of secrete is returned they are ordered alphabetically
     #by domain, access. Hence the first secret is bella,pera, or the second record here
-    
-    sleep(1)
     #delete first
     du.delete_secret(domain1, access1)
     du.delete_secret(domain2, access2)
@@ -256,13 +251,12 @@ def test_qget_first_secret(set_up):
     sys.argv=['secret_wallet','qget','pera']
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
-        sleep(1)
         assert "first record" in buf.getvalue() #get the inner value in the secret 
         assert "second record" not in buf.getvalue()
         
         
 @pytest.mark.integration
-def test_qget_second_secret(set_up):
+def test_qget_second_secret(cli_test_set_up):
     domain1 = 'pera'
     access1 = "cotta"
     domain2 = 'bella'
@@ -270,8 +264,6 @@ def test_qget_second_secret(set_up):
     
     #when the list of secrete is returned they are ordered alphabetically
     #by domain, access. Hence the first secret is bella,pera, or the second record here
-    
-    sleep(1)
     #delete first
     du.delete_secret(domain1, access1)
     du.delete_secret(domain2, access2)
@@ -288,12 +280,11 @@ def test_qget_second_secret(set_up):
     sys.argv=['secret_wallet','qget','pera']
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
-        sleep(1)
         assert "first record" not in buf.getvalue() #get the inner value in the secret 
         assert "second record" in buf.getvalue()
         
 @pytest.mark.integration
-def test_qget_wrong_input(set_up):
+def test_qget_wrong_input(cli_test_set_up):
     domain1 = 'pera'
     access1 = "cotta"
     domain2 = 'bella'
@@ -301,8 +292,7 @@ def test_qget_wrong_input(set_up):
     
     #when the list of secrete is returned they are ordered alphabetically
     #by domain, access. Hence the first secret is bella,pera, or the second record here
-    
-    sleep(1)
+ 
     #delete first
     du.delete_secret(domain1, access1)
     du.delete_secret(domain2, access2)
@@ -319,13 +309,12 @@ def test_qget_wrong_input(set_up):
     sys.argv=['secret_wallet','qget','pera']
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
-        sleep(1)
         assert "first record" not in buf.getvalue() #get the inner value in the secret 
         assert "second record" not in buf.getvalue()
         assert "I need a number"  in buf.getvalue()                     
         
 @pytest.mark.integration
-def test_delete_info_item(set_up):
+def test_delete_info_item(cli_test_set_up):
     domain = 'pera'
     access = "cotta"
     key1 = 'bella'
@@ -333,7 +322,6 @@ def test_delete_info_item(set_up):
     key2 = 'toste'
     value2 = 'mele'    
         
-    sleep(1)
     #delete first
     du.delete_secret(domain, access)
     #then set   
@@ -341,12 +329,12 @@ def test_delete_info_item(set_up):
     Parser()
     sys.argv=['secret_wallet','set','-d',domain, '-a', access, '-ik', key2, '-iv',value2]
     Parser()
+
     assert du.has_secret(domain, access)
         
     sys.argv=['secret_wallet','get', '-d', domain, '-a', access]
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
-        sleep(1)
         assert "pupa" in buf.getvalue() 
         assert "mele" in buf.getvalue()
     
@@ -358,13 +346,11 @@ def test_delete_info_item(set_up):
     sys.argv=['secret_wallet','get', '-d', domain, '-a', access]
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
-        sleep(1)
         assert "pupa" in buf.getvalue() 
         assert "mele" not in buf.getvalue()            
     
 @pytest.mark.integration    
-def test_rename_secret_no_new_values(set_up):
-    sleep(1)
+def test_rename_secret_no_new_values(cli_test_set_up):
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
     Parser()
     sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', ACCESS]
@@ -373,8 +359,7 @@ def test_rename_secret_no_new_values(set_up):
         assert "No new keys have been passed" in buf.getvalue()
 
 @pytest.mark.integration        
-def test_rename_secret_same_values(set_up):
-    sleep(1)
+def test_rename_secret_same_values(cli_test_set_up):
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
     Parser()
     sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', ACCESS, '-nd', DOMAIN, '-na', ACCESS]
@@ -383,8 +368,7 @@ def test_rename_secret_same_values(set_up):
         assert "Both new values are the same as the originals: nothing to do" in buf.getvalue()            
 
 @pytest.mark.integration           
-def test_rename_secret_wrong_values(set_up):
-    sleep(1)
+def test_rename_secret_wrong_values(cli_test_set_up):
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','first_key','-iv','first_value']
     Parser()
     sys.argv=['secret_wallet','rename','-d',DOMAIN, '-a', 'wrong', '-nd', DOMAIN, '-na', ACCESS]
@@ -393,18 +377,18 @@ def test_rename_secret_wrong_values(set_up):
         assert "Could not find the secret to rename" in buf.getvalue() 
 
 @pytest.mark.integration        
-def test_conf_list(set_up):
+def test_conf_list(cli_test_set_up):
     sys.argv=['secret_wallet','conf','-l']
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert "secret wallet configuration is located" in buf.getvalue()
         
 @pytest.mark.integration
-def test_wrong_salt(set_up):
+def test_wrong_salt(cli_test_set_up):
     my_access = 'another'
     other_key = cu.encrypt_key('pirillo')
-    sleep(1)
     du.insert_secret(DOMAIN, my_access, 'login', 'password', None, 'memorable', other_key)
+    sleep(1)
     #the following shoud produce and InvalidToken error
     sys.argv=['secret_wallet','get','-d',DOMAIN, '-a', my_access]
     with io.StringIO() as buf, redirect_stdout(buf):
@@ -412,9 +396,8 @@ def test_wrong_salt(set_up):
         assert 'InvalidToken' in buf.getvalue()
 
 @pytest.mark.integration
-def test_wrong_memorable_password(set_up):
+def test_wrong_memorable_password(cli_test_set_up):
     my_access = 'another'
-    sleep(1)
     try:
         #insert
         sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', my_access, '-u','login','-p','password']
@@ -422,6 +405,7 @@ def test_wrong_memorable_password(set_up):
         #now change the memorable in the session
         sys.argv=['secret_wallet','client','-a','set','-v','azzo'] 
         Parser()
+        sleep(1)
         #the following shoud produce and InvalidToken error
         sys.argv=['secret_wallet','get','-d',DOMAIN, '-a', my_access]
         with io.StringIO() as buf, redirect_stdout(buf):
@@ -431,7 +415,7 @@ def test_wrong_memorable_password(set_up):
         du.delete_secret(DOMAIN,my_access)
 
 @pytest.mark.integration
-def test_shell_set_help(set_up):
+def test_shell_set_help(cli_test_set_up):
     #mocking input to pass a 'set -h' command in a shell
     iou.my_input = iou.MockableInput(['set -h','quit'])
     sys.argv=['secret_wallet','shell']
@@ -440,7 +424,7 @@ def test_shell_set_help(set_up):
         assert 'usage: secret_wallet set' in buf.getvalue()
 
 @pytest.mark.integration
-def test_shell_set_get_delete(set_up):
+def test_shell_set_get_delete(cli_test_set_up):
     password = 'Arz12@gh67!caz'
     #mocking password retrieval
     iou.my_getpass = lambda question: password
@@ -459,7 +443,7 @@ def test_shell_set_get_delete(set_up):
     assert not du.has_secret('shell_test','test')
 
 @pytest.mark.integration
-def test_shell_set_rename_get_delete(set_up):
+def test_shell_set_rename_get_delete(cli_test_set_up):
     password = 'Arz12@gh67!caz'
     #mocking password retrieval
     iou.my_getpass = lambda question: password

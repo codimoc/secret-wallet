@@ -490,7 +490,8 @@ class Parser(object):
         parser.add_argument('command',
                             action='store',
                             choices=['set','get','delete', 'rename', 'list', 'conf',
-                                     'query','qget','reconf','help','session','quit','dump'],
+                                     'query','qget','reconf','help','session','quit',
+                                     'version', 'dump'],
                             help='Command to run inside the shell')
         iou.my_output('Starting a secret_wallet interactive shell. Type quit to quit, help for help')
         parameters.set_in_shell(True)

@@ -55,7 +55,7 @@ def session_sweeper(lifetime):
     get_logger(__name__).info("Sweeper ends")
             
 def my_session(value, lifetime, timeout):
-    p = Process(target=session_sweeper, args=(lifetime,))           
+    p = Process(target=session_sweeper, args=(lifetime,))        
     q = Process(target=session_listener, args=(value, timeout))
     p.daemon = True
     q.daemon = True

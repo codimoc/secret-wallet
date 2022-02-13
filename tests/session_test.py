@@ -8,15 +8,19 @@ from secretwallet.session.service import my_session
 
 @pytest.fixture
 def set_up():
-    lifetime = 6
-    timeout = 3
+    lifetime = 12
+    timeout = 6 
     value = 'message'
+    if is_connected():
+        stop_service()    
     p =Process(target=my_session, args =(value, lifetime, timeout))
     p.start()
+    sleep(1)
     
     yield
     
-    p.join()
+    p.terminate()    
+
 
 def test_get_password(set_up):
     sleep(0.5)
@@ -33,17 +37,15 @@ def test_set_password(set_up):
     assert 'nuova' == res[1]
     
 def test_expiry_password(set_up):
-    sleep(1)
     res = get_session_password()
     assert 'fresh'   == res[0]
     assert 'message' == res[1]
-    sleep(3)
+    sleep(6)
     res = get_session_password()
     assert 'stale'   == res[0]
     assert res[1] is None
     
 def test_connection_status(set_up):  
-    sleep(1)
     assert is_connected()
     stop_service()
     sleep(1)
