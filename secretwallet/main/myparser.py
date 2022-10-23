@@ -5,9 +5,12 @@ Created on 1 Jan 2020
 '''
 
 import argparse
+import contextlib
+import json
 import readline
 import shlex
 import sys
+import time
 
 from secretwallet.constants import parameters
 from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
@@ -16,13 +19,13 @@ from secretwallet.session.service import start_my_session
 from secretwallet.utils.cryptutils import encrypt_key
 from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets, update_secret, \
                                        update_secret_info_dictionary, delete_secret, delete_secrets, rename_secret, \
-                                       reconf_memorable, reconf_salt_key, query_secrets_by_field, query_secrets_by_pattern
+                                       reconf_memorable, reconf_salt_key, query_secrets_by_field, query_secrets_by_pattern, \
+                                       get_all_secrets
 from secretwallet.utils.logging import get_logger
 
 import pkg_resources as pkg
 import secretwallet.utils.ioutils as iou
 import secretwallet.utils.password_manager as pm
-from docutils.nodes import description
 
 
 logger = get_logger(__name__)
@@ -44,7 +47,8 @@ The list of secretwallet commands are:
    help            print the main help page
    version         the version of this package
    shell           starts a secret_wallet sheel for interctive queries
-   dump            dump all secrets to a file
+   dump            dump all secrets to a file in text format
+   save            save all secrets to a json file for backup and safe keeping (to be re-loaded)
    ....
 
 For individual help type:
@@ -66,7 +70,8 @@ The list of secretwallet commands are:
    help            print the main help page
    version         the version of this package
    quit            terminate the interactive shell
-   dump            dump all secrets to a file
+   dump            dump all secrets to a file in text format
+   save            save all secrets to a json file for backup and safe keeping (to be re-loaded)
    ....
 
 For individual help type:
@@ -83,7 +88,7 @@ class Parser(object):
                             action='store',
                             choices=['set','get','delete', 'rename', 'list', 'conf',
                                      'query','qget','reconf','help','session','client',
-                                     'version', 'shell', 'dump'],
+                                     'version', 'shell', 'dump', 'save'],
                             help='Command to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
@@ -199,7 +204,7 @@ class Parser(object):
                             help='The sub=domain (sub-category or access) of the secret')
         parser.add_argument('-ik',
                             '--info_key',
-                            help='The key in an information map')        
+                            help='The key in an information map')
 
         args = iou.my_parse(parser,sys.argv[2:])
         if args is None:
@@ -491,7 +496,7 @@ class Parser(object):
                             action='store',
                             choices=['set','get','delete', 'rename', 'list', 'conf',
                                      'query','qget','reconf','help','session','quit',
-                                     'version', 'dump'],
+                                     'version', 'dump', 'save'],
                             help='Command to run inside the shell')
         iou.my_output('Starting a secret_wallet interactive shell. Type quit to quit, help for help')
         parameters.set_in_shell(True)
@@ -603,29 +608,65 @@ class Parser(object):
                     iou.my_output('not connected')
         except Exception as e:
             iou.my_output(repr(e))
-            
+
     def dump(self):
-        """ Dumps all secrets to a flat file, designated by the option -f.
-            If the -e flag is used, the file is encrypted with the same password and salt as all the secrets.
-            When the flag is not set the file is not encrypted,
-        """
+        " Dumps all secrets to a flat file , designated by the option -f, or the console when not specified."
         parser = argparse.ArgumentParser(
             description=self.dump.__doc__,
             prog='secretwallet dump')
         #optional arguments
         parser.add_argument('-f',
                             dest='file',
-                            required=True,
-                            help='The output file')        
-        parser.add_argument('-e',
-                            dest = 'encryption',
-                            action = 'store_true',
-                            default = False,
-                            help='A boolean flag to indicate that encryption is required')
+                            required=False,
+                            help='The output file. If it is not specified it dumps to the console (default system out stream)')
 
         args = iou.my_parse(parser,sys.argv[2:])
-        if args is None:
-            return
 
         iou.my_output('Starting a secret wallet client with parameters %s'%args)
-        pass
+        try:
+            memorable, need_session = pm.get_memorable_password(False)
+            if need_session:
+                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
+            time.sleep(1)
+
+            secrets = get_all_secrets(memorable)
+            if (args.file is not None):
+                with open(args.file,'a') as f:
+                    with contextlib.redirect_stdout(f):
+                        iou.display_all_secrets(secrets) #send to file
+            else:
+                iou.display_all_secrets(secrets) #send to the console
+        except Exception as e:
+            iou.my_output(repr(e))
+
+    def save(self):
+        """ Save all secrets to a json file , designated by the option -f, or the console when not specified.
+        This file can be used for safe-keeping and reload, via the load function
+        """
+        parser = argparse.ArgumentParser(
+            description=self.save.__doc__,
+            prog='secretwallet save')
+        #optional arguments
+        parser.add_argument('-f',
+                            dest='file',
+                            required=False,
+                            help='The output file. If it is not specified it outputs the json structure to the console (default system out stream)')
+
+        args = iou.my_parse(parser,sys.argv[2:])
+
+        iou.my_output('Starting a secret wallet client with parameters %s'%args)
+        try:
+            memorable, need_session = pm.get_memorable_password(False)
+            if need_session:
+                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
+            time.sleep(1)
+
+            secrets = get_all_secrets(memorable)
+            if (args.file is not None):
+                with open(args.file,'w') as f:
+                    with contextlib.redirect_stdout(f):
+                        json.dump(secrets, f) #send to file
+            else:
+                iou.my_output(json.dumps(secrets), with_logging=False)
+        except Exception as e:
+            iou.my_output(repr(e))

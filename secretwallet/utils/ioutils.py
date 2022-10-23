@@ -52,12 +52,12 @@ def confirm_delete(secrets):
     answ = my_input("\nDo you want to delete these secrets (yes|no) ")
     if not answ.lower().startswith('y'):
         exit(1)
-        
+
 def confirm_delete_key(domain, access, key):
     "Confirm secrets to delete"
     answ = my_input(f"Do you want to delete the key {key} for domain {domain} and access {access}? (yes|no) ")
     if not answ.lower().startswith('y'):
-        exit(1)        
+        exit(1)
 
 def confirm_rename(secrets):
     "Confirm secret to rename"
@@ -105,9 +105,9 @@ class MockableInput:
         self.__generator = generator(inputs)
 
     def __call__(self, question:str) -> str:
-        input = self.__generator.__next__()
+        myinput = self.__generator.__next__()
         logger.debug(f"{question}: {input}")
-        return input
+        return myinput
 
 
 def display_reconfiguration_warning():
@@ -149,3 +149,8 @@ def display_secret(secret):
             print(f"{k:20}: {v}")
     print(f"\nLast updated        : {secret['timestamp']}")
     print("**********************************************************")
+
+def display_all_secrets(secrets):
+    "Return a text representation of all the secrets in a readable format"
+    for secret in secrets:
+        display_secret(secret)
