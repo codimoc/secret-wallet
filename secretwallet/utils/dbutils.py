@@ -4,16 +4,19 @@ Created on 24 Dec 2019
 @author: codimoc
 '''
 
-import secretwallet.utils.ioutils as iou
-import boto3
-import sys
-from boto3.dynamodb.conditions import Key
 from datetime import datetime
+import sys
+
+import boto3
+from boto3.dynamodb.conditions import Key
 from secretwallet.constants import parameters
 from secretwallet.utils.cryptutils import encrypt, encrypt_key, decrypt
 from secretwallet.utils.logging import get_logger
 
-logger = get_logger(__name__)
+import secretwallet.utils.ioutils as iou
+
+
+logger = get_logger(__name__, parameters.get_log_level())
 
 SEPARATOR="#-#"
 
@@ -183,7 +186,7 @@ def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt=
                                  )
     except:
         pass #the condition failed but there should be no side effect
-    
+
 def update_secret_info_dictionary(domain, access, enc_info):
     """Update the info dictionary of a secret
     input:
@@ -191,7 +194,7 @@ def update_secret_info_dictionary(domain, access, enc_info):
     access     the secret sub-domain or access specification
     enc_info   the new info dictionary (encrypted) to replace the old one
     """
-    
+
     timestamp = datetime.now().isoformat()
     expression_attributes = {'#domain':'domain',
                              '#access':'access',
@@ -203,17 +206,17 @@ def update_secret_info_dictionary(domain, access, enc_info):
                          ':ts': timestamp}
     update_expression = "SET #info = :info, #timestamp = :ts"
     condition_expression = "#domain = :domain AND #access = :access"
-        
-    try:    
+
+    try:
         _get_table().update_item(Key={"domain": domain, "access": access},
                                  ExpressionAttributeNames  = expression_attributes,
                                  ExpressionAttributeValues = expression_values,
                                  UpdateExpression          = update_expression,
-                                 ConditionExpression       = condition_expression 
+                                 ConditionExpression       = condition_expression
                                  )
     except:
-        pass #the condition failed but there should be no side effect    
-    
+        pass #the condition failed but there should be no side effect
+
 
 def rename_secret(domain, access, new_domain, new_access):
     """Rename the domain and access of a secret
@@ -289,7 +292,7 @@ def get_secret(domain, access, mem_pwd, salt=None, need_decrypt=True):
     ret = resp['Item']
     if not need_decrypt:
         return ret
-    
+
     if 'uid' in ret and ret['uid'] is not None and 'pwd' in ret and ret['pwd'] is not None:
         ret['uid'] = decrypt(ret['uid'], mem_pwd, salt)
         ret['pwd'] = decrypt(ret['pwd'], mem_pwd, salt)

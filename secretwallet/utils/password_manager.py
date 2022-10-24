@@ -6,7 +6,7 @@ import secretwallet.session.client as sc
 import secretwallet.utils.ioutils as iou
 
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, parameters.get_log_level())
 
 __policy = PasswordPolicy.from_names(length  = PWD_LENGTH,
                                    uppercase = PWD_UPPER,
@@ -29,7 +29,7 @@ def explain(pwd):
 
 def get_password(prompt, attempts):
     num_attempts = attempts
-    while num_attempts >0: 
+    while num_attempts >0:
         print(f"*** {num_attempts} attempts left ***")
         p1 = iou.my_getpass(f"{prompt}-First entry  :")
         explanation = explain(p1)
@@ -44,26 +44,26 @@ def get_password(prompt, attempts):
             logger.error(message)
             num_attempts -= 1
             continue
-        return p1 
-    message = "Too many attempts at entering a valid password. Goodbye!" 
+        return p1
+    message = "Too many attempts at entering a valid password. Goodbye!"
     print(message)
     logger.error(message)
     exit(1)
-    
+
 def get_password_untested(prompt):
     return iou.my_getpass(f"{prompt} :")
-    
+
 def get_memorable_password(tested = False):
     """Get the memorable password, either from the live session or from the client prompt.
     input:
-    tested    a boolean flag. If true then the password strength is ensured 
+    tested    a boolean flag. If true then the password strength is ensured
               and the password is checked against a second entry
     output:
     return a pair of values (memorable, need_session) where memorable is the
-    memorable password and need_session is a flag that tells if a new session needs to be started. 
+    memorable password and need_session is a flag that tells if a new session needs to be started.
     """
     memorable = None
-    if parameters.is_in_shell(): #in shell mode the password is kept in memory in the parameters 
+    if parameters.is_in_shell(): #in shell mode the password is kept in memory in the parameters
         memorable = parameters.get_memorable_pwd()
         if memorable is not None:
             return (memorable, False)
@@ -73,8 +73,8 @@ def get_memorable_password(tested = False):
             else:
                 memorable = get_password_untested("Enter the memorable password")
             parameters.set_memorable_pwd(memorable)
-            
-            return (memorable, False)                
+
+            return (memorable, False)
     elif sc.is_connected(): #in bash shell the password is kept in a separate process
         res = sc.get_session_password()
         if res[0] == 'fresh':

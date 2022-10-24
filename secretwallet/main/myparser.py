@@ -28,7 +28,7 @@ import secretwallet.utils.ioutils as iou
 import secretwallet.utils.password_manager as pm
 
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, parameters.get_log_level())
 
 usage_bash = '''secret_wallet <command> [<args>]
 
@@ -625,9 +625,6 @@ class Parser(object):
         iou.my_output('Starting a secret wallet client with parameters %s'%args)
         try:
             memorable, need_session = pm.get_memorable_password(False)
-            if need_session:
-                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
-            time.sleep(1)
 
             secrets = get_all_secrets(memorable)
             if (args.file is not None):
@@ -636,6 +633,10 @@ class Parser(object):
                         iou.display_all_secrets(secrets) #send to file
             else:
                 iou.display_all_secrets(secrets) #send to the console
+
+            #here start the session (at the end so that we can daemonize)
+            if need_session:
+                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
         except Exception as e:
             iou.my_output(repr(e))
 
@@ -657,9 +658,6 @@ class Parser(object):
         iou.my_output('Starting a secret wallet client with parameters %s'%args)
         try:
             memorable, need_session = pm.get_memorable_password(False)
-            if need_session:
-                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
-            time.sleep(1)
 
             secrets = get_all_secrets(memorable)
             if (args.file is not None):
@@ -668,5 +666,9 @@ class Parser(object):
                         json.dump(secrets, f) #send to file
             else:
                 iou.my_output(json.dumps(secrets), with_logging=False)
+
+            #here start the session (at the end so that we can daemonize)
+            if need_session:
+                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
         except Exception as e:
             iou.my_output(repr(e))

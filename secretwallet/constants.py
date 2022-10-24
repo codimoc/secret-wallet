@@ -38,6 +38,7 @@ PWD_SPECIAL=1  #at least one special char
 PWD_UPPER = 1  #at least an upper case
 
 LOG_FILE = f"{CONFIG_FOLDER}/secretwallet.log"
+LOG_LEVEL = "info"
 LOG_MAX_FILE_SIZE =  1000000 #1MB
 LOG_BACKUP_COUNT  = 1        #number of rotated backup files that are retained
 
@@ -56,61 +57,67 @@ def singleton(cls):
 
 @singleton
 class Parameters(object):
-    
+
     def __init__(self):
         self.__data = dict()
-    
+
     def set_data(self,data):
         self.__data = dict(data)
-    
+
     def configure(self, conf_file):
         if not exists(conf_file):
             raise FileNotFoundError("Missing configuration file: run the init command")
         with open(conf_file, 'r') as cfile:
             self.set_data(json.load(cfile))
-            
+
     def clear(self):
         self.__data = dict()
-    
+
     def get_profile_name(self):
         if 'profile' in self.__data:
             return self.__data['profile']
         else:
             return AWS_PROFILE
-    
+
+    def get_log_level(self):
+        if 'log_level' in self.__data:
+            return self.__data['log_level']
+        else:
+            return LOG_LEVEL
+
     def set_profile_name(self, profile):
         self.__data['profile'] = profile
-        
+
     def get_pre_salt(self):
         if 'pre_salt' in self.__data:
             return self.__data['pre_salt']
         else:
             return PRE_SALT
-        
+
     def get_table_name(self):
         if 'table_name' in self.__data:
             return self.__data['table_name']
         else:
-            return SECRET_ACCESS_TABLE 
-        
+            return SECRET_ACCESS_TABLE
+
     def set_table_name(self, table):
         self.__data['table_name'] = table
-    
+
     def get_salt_key(self):
         if 'key' in self.__data:
             return self.__data['key']
         else:
             raise RuntimeError('The encrypted key for the salt was not found')
-        
+
     def set_salt_key(self, key):
         self.__data['key'] = key
-    
+
     def get_session_timeout(self):
         if 'session_timeout' in self.__data:
             return self.__data['session_timeout']
         else:
-            return SESSION_TIMEOUT 
-        
+            return SESSION_TIMEOUT
+
     def set_session_timeout(self, timeout):
         self.__data['session_timeout'] = timeout
 
@@ -134,13 +141,13 @@ class Parameters(object):
             return self.__data['in_shell']
         else:
             return False
-        
+
     def get_memorable_pwd(self):
-        "get the memorable password if stored during in shell mode" 
+        "get the memorable password if stored during in shell mode"
         if not self.is_in_shell():
             return None
         if 'memorable' in self.__data and 'clock_start' in self.__data:
-            now = datetime.datetime.now()  
+            now = datetime.datetime.now()
             if (now - self.get_clock_start()).total_seconds() < self.get_session_timeout():
                 self.set_clock_start(now)
                 return self.__data['memorable']
@@ -149,34 +156,52 @@ class Parameters(object):
                 return None
         else:
             return None
-        
+
     def set_memorable_pwd(self, memorable):
         "set the memorable password during shell mode"
         self.__data['memorable'] = memorable
         self.set_clock_start(datetime.datetime.now())
-        
+
 
     def get_session_lifetime(self):
         if 'session_lifetime' in self.__data:
             return self.__data['session_lifetime']
         else:
-            return SESSION_LIFETIME 
-                
+            return SESSION_LIFETIME
+
     def set_session_lifetime(self, lifetime):
         self.__data['session_lifetime'] = lifetime
-        
+
     def get_session_address(self):
         if 'session_address' in self.__data:
             return self.__data['session_address']
         else:
             return SESSION_ADDRESS
-        
+
     def get_session_connection_password(self):
         if 'session_connection_password' in self.__data:
             return self.__data['session_connection_password']
         else:
-            return SESSION_PWD                        
+            return SESSION_PWD
+
+    def set_listener_pid(self,pid):
+        self.__data["listener_pid"] = pid
+
+    def get_listener_pid(self):
+        if "listener_pid" in self.__data:
+            return self.__data["listener_pid"]
+        else:
+            return None
+
+    def set_sweeper_pid(self,pid):
+        self.__data["sweeper_pid"] = pid
+
+    def get_sweeper_pid(self):
+        if "sweeper_pid" in self.__data:
+            return self.__data["sweeper_pid"]
+        else:
+            return None
 
 
-#single object        
+#single object
 parameters = Parameters()
