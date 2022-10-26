@@ -17,6 +17,7 @@ import secretwallet.utils.ioutils as iou
 
 
 logger = get_logger(__name__, parameters.get_log_level())
+parameters.register_logger(__name__, logger)
 
 SEPARATOR="#-#"
 

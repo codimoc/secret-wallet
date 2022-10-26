@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import os
 from os.path import expanduser, exists
 
@@ -45,6 +46,23 @@ LOG_BACKUP_COUNT  = 1        #number of rotated backup files that are retained
 def is_posix()->bool:
     return os.name=='posix'
 
+
+def make_log_level(level):
+    if level.lower()=="critical":
+        return logging.CRITICAL
+    elif level.lower()=="fatal":
+        return logging.FATAL
+    elif level.lower()=="error":
+        return logging.ERROR
+    elif level.lower()=="warning":
+        return logging.WARNING
+    elif level.lower()=="info":
+        return logging.INFO
+    elif level.lower()=="debug":
+        return logging.DEBUG
+    else:
+        return logging.NOTSET
+
 #an object to store configurable parameters
 
 def singleton(cls):
@@ -60,9 +78,32 @@ class Parameters(object):
 
     def __init__(self):
         self.__data = dict()
+        self.__loggers = dict()
 
     def set_data(self,data):
         self.__data = dict(data)
+        self.update_loggers()
+
+    def register_logger(self, name, logger):
+        self.__loggers[name] = logger
+
+    def update_loggers(self):
+        level = make_log_level(self.get_log_level())
+        for logger in self.__loggers.values():
+            logger.setLevel(level)
+            handler = logging.handlers.RotatingFileHandler(LOG_FILE,
+                                                           mode='a',
+                                                           maxBytes=LOG_MAX_FILE_SIZE,
+                                                           backupCount=LOG_BACKUP_COUNT,
+                                                           encoding='utf-8',
+                                                           delay=0)
+            handler.setLevel(level)
+            # Create a formatter.
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            # Add handler and formatter.
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+
 
     def configure(self, conf_file):
         if not exists(conf_file):

@@ -1,11 +1,11 @@
 import getpass
-import logging
 
 from secretwallet.constants import parameters
 from secretwallet.utils.logging import get_logger
 
 
 logger = get_logger(__name__, parameters.get_log_level())
+parameters.register_logger(__name__, logger)
 
 def display_list(message, secrets):
     field_lenght = max([len(x[0]) for x in secrets], default=0)+5

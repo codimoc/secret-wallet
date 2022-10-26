@@ -7,6 +7,7 @@ from secretwallet.constants import parameters, is_posix
 from secretwallet.utils.logging import get_logger
 
 logger = get_logger(__name__, parameters.get_log_level())
+parameters.register_logger(__name__, logger)
 
 def session_listener(seed, timeout):
     """ Session service function with an initial value as a seed

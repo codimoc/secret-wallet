@@ -7,11 +7,10 @@ Created on 1 Jan 2020
 import argparse
 import contextlib
 import json
-import readline
 import shlex
 import sys
-import time
 
+import readline
 from secretwallet.constants import parameters
 from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
@@ -29,6 +28,7 @@ import secretwallet.utils.password_manager as pm
 
 
 logger = get_logger(__name__, parameters.get_log_level())
+parameters.register_logger(__name__, logger)
 
 usage_bash = '''secret_wallet <command> [<args>]
 
@@ -376,10 +376,11 @@ class Parser(object):
     def conf(self):
         """
            Configures some parameters for this application. It is possible to list all parameters with the -l option,
-           or to configure the timeout and lifetime (in seconds). The timeout is the amount of time in seconds along which the memorable
-           password is remembered without been re-asked. The lifetime determines the lifetime of the background
-           process that manages the temporary storage of the memorable password. The value of the lifetime parameter should be bigger
-           than the value of the password timeout.
+           or to configure the timeout and lifetime (in seconds) or the log level.
+           The timeout is the amount of time in seconds along which the memorable password is remembered without been re-asked.
+           The lifetime determines the lifetime of the background process that manages the temporary storage of
+           the memorable password. The value of the lifetime parameter should be bigger than the password timeout.
+           The logging level is one of debug, info, warning, critical, error or fatal.
         """
         parser = argparse.ArgumentParser(
             description=self.conf.__doc__,
@@ -402,6 +403,10 @@ class Parser(object):
                             type = int,
                             default = -1,
                             help='Session lifetime in seconds')
+        parser.add_argument('-ll',
+                            '--loglevel',
+                            dest = 'loglevel',
+                            help='Logging level. One of debug, info, warning, critical, error or fatal')
 
         args = iou.my_parse(parser,sys.argv[2:])
         if args is None:
@@ -411,15 +416,18 @@ class Parser(object):
         try:
             if (args.list):
                 list_configuration()
-            elif args.timeout >=0 or args.lifetime >=0:
-                conf = get_configuration()
-                if args.timeout >=0:
-                    conf['session_timeout']=args.timeout
-                if args.lifetime >=0:
-                    conf['session_lifetime']=args.lifetime
-                set_configuration_data(conf)
             else:
-                pass
+                conf = get_configuration()
+                if args.timeout is not None and args.timeout >=0:
+                    conf['session_timeout']=args.timeout
+                if args.lifetime is not None and args.lifetime >=0:
+                    conf['session_lifetime']=args.lifetime
+                if args.loglevel is not None:
+                    if args.loglevel.lower() in ['debug', 'info', 'warning', 'critical', 'error','fatal']:
+                        conf['log_level'] = args.loglevel.lower()
+                    else:
+                        iou.my_output(f"The passed log level {args.loglevel.lower()} is not valid")
+                set_configuration_data(conf)
         except Exception as e:
             iou.my_output(repr(e))
 

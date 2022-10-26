@@ -8,7 +8,6 @@ from time import sleep
 
 import pytest
 from secretwallet.constants import parameters
-from secretwallet.main.configuration import get_configuration, set_configuration_data
 from secretwallet.main.myparser import Parser
 from secretwallet.session.client import is_connected, stop_service
 from secretwallet.session.service import my_session
@@ -37,27 +36,22 @@ def cli_test_set_up():
     iou.my_input  = lambda _:'yes'
     iou.my_output = lambda message, with_exit=False, with_logging=False: print(message)
 
-    path = os.path.dirname(__file__)
-    conf_file = os.path.join(path,'data','test_integration.json')
-    conf_data = get_configuration(conf_file)
-    parameters.set_data(conf_data)
     if is_connected():
         stop_service()
     p =Process(target=my_session, args =(MEM, 120, 30))
     p.start()
+    while not is_connected():
+        pass
 
     du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM)
-    sleep(1)
 
 
-    yield conf_file
+    yield
 
     iou.my_input = old_input
     iou.my_output = old_output
     iou.my_getpass = old_getpass
     du.delete_secret(DOMAIN,ACCESS)
-    parameters.clear()
-    set_configuration_data(conf_data, conf_file)
 
     if is_connected():
         stop_service()

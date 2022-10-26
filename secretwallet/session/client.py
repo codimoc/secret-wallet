@@ -5,6 +5,7 @@ from secretwallet.utils.logging import get_logger
 
 
 logger = get_logger(__name__, parameters.get_log_level())
+parameters.register_logger(__name__, logger)
 
 def get_session_password():
     if not is_posix():

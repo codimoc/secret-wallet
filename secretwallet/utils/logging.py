@@ -1,25 +1,10 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-from secretwallet.constants import LOG_FILE, LOG_MAX_FILE_SIZE, LOG_BACKUP_COUNT
+from secretwallet.constants import LOG_FILE, LOG_MAX_FILE_SIZE, LOG_BACKUP_COUNT, make_log_level
 from secretwallet.utils.fileutils import touch
 
 
-def get_log_level(level):
-    if level.lower()=="critical":
-        return logging.CRITICAL
-    elif level.lower()=="fatal":
-        return logging.FATAL
-    elif level.lower()=="error":
-        return logging.ERROR
-    elif level.lower()=="warning":
-        return logging.WARNING
-    elif level.lower()=="info":
-        return logging.INFO
-    elif level.lower()=="debug":
-        return logging.DEBUG
-    else:
-        return logging.NOTSET
 
 def get_logger(name, log_level="info"):
     """Returns a logger
@@ -27,7 +12,7 @@ def get_logger(name, log_level="info"):
     name        the name of the logger, typically a python_module name
     level       the logging level
     """
-    level = get_log_level(log_level)
+    level = make_log_level(log_level)
     logger = logging.getLogger(name)
     logger.setLevel(level)
     # Create the rotating file handler. Limit the size to 1000000Bytes ~ 1MB .

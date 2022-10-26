@@ -1,10 +1,7 @@
 from multiprocessing import Process
-import os
-import signal
 from time import sleep
 
 import pytest
-from secretwallet.constants import parameters
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected, ping_session_server
 from secretwallet.session.service import my_session
 
@@ -14,8 +11,9 @@ def set_up():
     lifetime = 12
     timeout = 6
     value = 'message'
+
     #kill the listener
-    while is_connected():
+    if is_connected():
         stop_service()
     #now start the services
     p =Process(target=my_session, args =(value, lifetime, timeout))
@@ -25,10 +23,6 @@ def set_up():
 
     yield
 
-    #kill the sweeper
-    pid = parameters.get_sweeper_pid();
-    if pid is not None:
-        os.kill(pid,signal.SIGSTOP)
     p.terminate()
 
 
