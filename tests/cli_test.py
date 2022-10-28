@@ -23,6 +23,8 @@ UID    = 'me@HOME'
 PWD    = 'pass'
 INFO   = {'key':'value'}
 MEM    = 'memorable'
+LIFETIME = 240
+TIMEOUT = 60
 
 
 old_input = iou.my_input
@@ -38,7 +40,7 @@ def cli_test_set_up():
 
     if is_connected():
         stop_service()
-    p =Process(target=my_session, args =(MEM, 120, 30))
+    p =Process(target=my_session, args =(MEM, LIFETIME, TIMEOUT))
     p.start()
     while not is_connected():
         pass
@@ -554,7 +556,7 @@ def test_save(cli_test_set_up):
 
 @pytest.mark.integration
 def test_save_to_file(cli_test_set_up):
-    path = "test_dump_tp_file.json"
+    path = "test_dump_to_file.json"
 
     # first clean up the file if it exists
     if os.path.exists(path):
@@ -592,6 +594,82 @@ def test_save_to_file(cli_test_set_up):
             second_record = [x for x in data if x["domain"]==domain2 and x["access"]==access2][0]
             assert "first record" == first_record["info"]["idx"]
             assert "second record" == second_record["info"]["idx"]
+
+    finally:
+        os.remove(path)
+
+@pytest.mark.integration
+def test_load_from_file(cli_test_set_up):
+    path = "test_backup_file.json"
+
+    # first clean up the file if it exists
+    if os.path.exists(path):
+        os.remove(path)
+
+    #all the pre-existing secrets
+    secrets = du.list_secrets(None)
+    #clean-up
+    du.delete_secrets(secrets)
+    secrets = du.list_secrets(None)
+    assert 0 == len(secrets)
+
+    #now add some secrets
+
+    #set the data
+    domain1 = 'pera'
+    access1 = "cotta"
+    domain2 = 'bella'
+    access2 = 'pera'
+
+    #set the secrets
+    sys.argv=['secret_wallet','set','-d',domain1, '-a', access1, '-ik', 'idx', '-iv','first record']
+    Parser()
+    sys.argv=['secret_wallet','set','-d',domain2, '-a', access2, '-ik', 'idx', '-iv','second record']
+    Parser()
+
+    #check the status now
+    assert du.has_secret(domain1, access1)
+    assert du.has_secret(domain2, access2)
+    assert 2 == len(du.list_secrets(None)) #there should be two secrets
+    s1a = du.get_secret(domain1, access1, MEM)
+    s2a = du.get_secret(domain2, access2, MEM)
+
+    #now save to a file
+    try:
+        sys.argv=['secret_wallet','save','-f', path]
+        Parser()
+
+        #now assert the file exists
+        assert os.path.exists(path)
+
+        #now clean-up the secrets again
+        du.delete_secrets(du.list_secrets(None))
+        assert 0 == len(du.list_secrets(None))
+
+        #and reload from file
+        sys.argv=['secret_wallet','load','-f', path]
+        Parser()
+
+        assert du.has_secret(domain1, access1)
+        assert du.has_secret(domain2, access2)
+        assert 2 == len(du.list_secrets(None)) #there should be two secrets  again
+        s1b = du.get_secret(domain1, access1, MEM)
+        s2b = du.get_secret(domain2, access2, MEM)
+        assert s1a == s1b
+        assert s2a == s2b
+
+        #now try to reload the file without cleaning the table,
+        #it should still work without side effects
+        sys.argv=['secret_wallet','load','-f', path]
+        Parser()
+
+        assert du.has_secret(domain1, access1)
+        assert du.has_secret(domain2, access2)
+        assert 2 == len(du.list_secrets(None)) #there should be two secrets  again
+        s1b = du.get_secret(domain1, access1, MEM)
+        s2b = du.get_secret(domain2, access2, MEM)
+        assert s1a == s1b
+        assert s2a == s2b
 
     finally:
         os.remove(path)

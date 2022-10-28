@@ -49,6 +49,7 @@ The list of secretwallet commands are:
    shell           starts a secret_wallet sheel for interctive queries
    dump            dump all secrets to a file in text format
    save            save all secrets to a json file for backup and safe keeping (to be re-loaded)
+   load            reload all secrets from a json file (backup and restore)
    ....
 
 For individual help type:
@@ -72,6 +73,7 @@ The list of secretwallet commands are:
    quit            terminate the interactive shell
    dump            dump all secrets to a file in text format
    save            save all secrets to a json file for backup and safe keeping (to be re-loaded)
+   load            reload all secrets from a json file (backup and restore)
    ....
 
 For individual help type:
@@ -88,7 +90,7 @@ class Parser(object):
                             action='store',
                             choices=['set','get','delete', 'rename', 'list', 'conf',
                                      'query','qget','reconf','help','session','client',
-                                     'version', 'shell', 'dump', 'save'],
+                                     'version', 'shell', 'dump', 'save','load'],
                             help='Command to run')
         self._parser = parser
         args = parser.parse_args(sys.argv[1:2])
@@ -630,7 +632,7 @@ class Parser(object):
 
         args = iou.my_parse(parser,sys.argv[2:])
 
-        iou.my_output('Starting a secret wallet client with parameters %s'%args)
+        iou.my_output('Starting a secret wallet dump with parameters %s'%args)
         try:
             memorable, need_session = pm.get_memorable_password(False)
 
@@ -663,7 +665,7 @@ class Parser(object):
 
         args = iou.my_parse(parser,sys.argv[2:])
 
-        iou.my_output('Starting a secret wallet client with parameters %s'%args)
+        iou.my_output('Starting a secret wallet save with parameters %s'%args)
         try:
             memorable, need_session = pm.get_memorable_password(False)
 
@@ -674,6 +676,38 @@ class Parser(object):
                         json.dump(secrets, f) #send to file
             else:
                 iou.my_output(json.dumps(secrets), with_logging=False)
+
+            #here start the session (at the end so that we can daemonize)
+            if need_session:
+                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
+        except Exception as e:
+            iou.my_output(repr(e))
+
+    def load(self):
+        """Reload secrets, previously stored in a json file after a backup operation (save action).
+        It requires a json file as input, as specified with the -f option."""
+        parser = argparse.ArgumentParser(
+            description=self.load.__doc__,
+            prog='secretwallet load')
+        #optional arguments
+        parser.add_argument('-f',
+                            dest='file',
+                            required=True,
+                            help='The input file in json format, containing the backed-up secrets.')
+
+        args = iou.my_parse(parser,sys.argv[2:])
+        iou.my_output('Starting a secret wallet load with parameters %s'%args)
+        try:
+            memorable, need_session = pm.get_memorable_password(True)
+
+            with open(args.file,'r') as f:
+                secrets = json.load(f)
+                for secret in secrets:
+                    domain = secret["domain"]
+                    access = secret["access"]
+                    if not has_secret(domain, access):
+                        iou.my_output(f"inserting secret (domain:{domain}, access:{access})")
+                        insert_secret(domain, access, secret["uid"], secret["pwd"], secret["info"] , memorable, timestamp=secret["timestamp"])
 
             #here start the session (at the end so that we can daemonize)
             if need_session:

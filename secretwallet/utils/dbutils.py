@@ -107,7 +107,7 @@ def create_table(table_name=parameters.get_table_name()):
         print(f"Table {table_name} has been created")
 
 
-def insert_secret(domain, access, uid, pwd, info, mem_pwd, salt=None):
+def insert_secret(domain, access, uid, pwd, info, mem_pwd, salt=None, timestamp = None):
     """Insert a secret access record in the cloud DB
     input:
     domain     the domain, i.e. logical context, of the secret
@@ -117,10 +117,12 @@ def insert_secret(domain, access, uid, pwd, info, mem_pwd, salt=None):
     info       a map of informations (not encryted)
     mem_pwd    memorable password to encrypt the secret
     salt       a string representation of the salt (optional)
+    timestamp  the secret timestamp. If not passed it is calculated
     """
     if salt is None:
         salt = parameters.get_salt_key()
-    timestamp = datetime.now().isoformat()
+    if timestamp is None:
+        timestamp = datetime.now().isoformat()
     if uid is None:
         uid = ""
     if pwd is None:
