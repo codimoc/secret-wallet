@@ -27,7 +27,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="secret-wallet-codimoc",
-    version="0.5.0",
+    version="0.5.1",
     author="codimoc",
     author_email="codimoc@prismoid.uk",
     description="A cloud-based wallet for personal secrets",
@@ -54,7 +54,7 @@ setuptools.setup(
             'secret_wallet_conf = secretwallet.main:configure'],
     },
     tests_require=['pytest'],
-    cmdclass = {'test': PyTest}, 
+    cmdclass = {'test': PyTest},
     package_data={"tests": ["data/*.json"],
     }
 )
