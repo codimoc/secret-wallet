@@ -45,6 +45,7 @@ def cli_test_set_up():
     while not is_connected():
         pass
 
+    du.create_table(parameters.get_table_name())
     du.insert_secret(DOMAIN, ACCESS, UID, PWD, INFO, MEM)
 
 

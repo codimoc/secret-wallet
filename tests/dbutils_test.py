@@ -4,19 +4,6 @@ from secretwallet.constants import parameters
 
 import secretwallet.utils.cryptutils as cu
 import secretwallet.utils.dbutils as du 
-
-
-@pytest.fixture
-def set_up():
-    c_pwd = u"passwd"
-    table_name = "test" 
-    key = cu.encrypt_key(c_pwd)
-    parameters.set_salt_key(key)
-    parameters.set_table_name(table_name)
-    du.create_table(table_name)
-    yield 
-    
-    parameters.clear()
     
 @pytest.fixture
 def insert_records():
@@ -37,7 +24,7 @@ def cleanup_backups():
     du._cleanup_table_backups('backup')
     
 
-def test_insert_delete_login(set_up):
+def test_insert_delete_login():
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_pwd = u"ciao mamma"
@@ -51,7 +38,7 @@ def test_insert_delete_login(set_up):
         du.delete_secret(domain, access)
         assert ns == du.count_secrets()
         
-def test_wrong_salt_key(set_up):
+def test_wrong_salt_key():
     c_pwd = 'pirillo'
     wrong_key = cu.encrypt_key(c_pwd)
     m_pwd = u"memorabile"
@@ -66,7 +53,7 @@ def test_wrong_salt_key(set_up):
     finally:
         du.delete_secret(domain, access)
         
-def test_wrong_memorable(set_up):
+def test_wrong_memorable():
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access"    
@@ -79,7 +66,7 @@ def test_wrong_memorable(set_up):
     finally:
         du.delete_secret(domain, access)                
         
-def test_insert_select_compare_login(set_up):
+def test_insert_select_compare_login():
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_pwd = u"ciao mamma"
@@ -94,7 +81,7 @@ def test_insert_select_compare_login(set_up):
         du.delete_secret(domain, access)
 
 @pytest.mark.integration        
-def test_insert_select_compare_info(set_up):
+def test_insert_select_compare_info():
     m_pwd = u"memorabile"
     secret_info = {'message':'secret'}
     domain = u"my_domain" 
@@ -107,7 +94,7 @@ def test_insert_select_compare_info(set_up):
         du.delete_secret(domain, access)        
 
 @pytest.mark.integration        
-def test_has_secret(set_up):
+def test_has_secret():
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_pwd = u"ciao mamma"
@@ -120,7 +107,7 @@ def test_has_secret(set_up):
         du.delete_secret(domain, access)
 
 @pytest.mark.integration        
-def test_has_not_secret(set_up):
+def test_has_not_secret():
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_pwd = u"ciao mamma"
@@ -133,7 +120,7 @@ def test_has_not_secret(set_up):
         du.delete_secret(domain, access)
 
 @pytest.mark.integration        
-def test_update_secret_login(set_up):
+def test_update_secret_login():
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_uid2 = u"me@office"
@@ -158,7 +145,7 @@ def test_update_secret_login(set_up):
         du.delete_secret(domain, access)
 
 @pytest.mark.integration        
-def test_update_secret_info_change_value(set_up):
+def test_update_secret_info_change_value():
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access" 
@@ -180,7 +167,7 @@ def test_update_secret_info_change_value(set_up):
         du.delete_secret(domain, access)
         
 @pytest.mark.integration        
-def test_update_secret_info_insert_value(set_up):
+def test_update_secret_info_insert_value():
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access" 
@@ -204,7 +191,7 @@ def test_update_secret_info_insert_value(set_up):
         du.delete_secret(domain, access)
         
 @pytest.mark.integration        
-def test_update_secret_info_change_password_and_a_value(set_up):
+def test_update_secret_info_change_password_and_a_value():
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access" 
@@ -231,7 +218,7 @@ def test_update_secret_info_change_password_and_a_value(set_up):
         du.delete_secret(domain, access)
         
 @pytest.mark.integration        
-def test_update_missing_secret_no_effect(set_up):
+def test_update_missing_secret_no_effect():
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access"
@@ -259,7 +246,7 @@ def test_update_missing_secret_no_effect(set_up):
         du.delete_secret(domain, access)
         
 @pytest.mark.integration        
-def test_update_info_dict_remove_key(set_up):
+def test_update_info_dict_remove_key():
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access" 
@@ -289,7 +276,7 @@ def test_update_info_dict_remove_key(set_up):
         
         
 @pytest.mark.integration        
-def test_has_table(set_up):
+def test_has_table():
     assert True  == du.has_table(parameters.get_table_name())
     assert False == du.has_table('new_table')
     
@@ -304,7 +291,7 @@ def test_encrypt_decrypt_info():
     for key in info:
         assert ide[key] == info[key]
     
-def test_delete_secrets(set_up):
+def test_delete_secrets():
     m_pwd = u"memorabile"
     domain = u"my_domain"  
     info = {'message':'secret'}
@@ -323,7 +310,7 @@ def test_delete_secrets(set_up):
     assert cnt== du.count_secrets()
     
     
-def test_rename_secret(set_up):
+def test_rename_secret():
     m_pwd = u"memorabile"
     domain = u"my_domain"
     access = u"my_access"
@@ -348,7 +335,7 @@ def test_rename_secret(set_up):
         du.delete_secret(domain, access)
         du.delete_secret(new_domain, new_access)
         
-def test_reconf_memorable(set_up, insert_records):
+def test_reconf_memorable(insert_records):
     old_mem = "memorable"
     new_mem = 'another'
     secrets = du.list_secrets("d1") + du.list_secrets("d2")
@@ -367,7 +354,7 @@ def test_reconf_memorable(set_up, insert_records):
     with pytest.raises(cryptography.fernet.InvalidToken):
         du.get_secret('d1', 'a1', old_mem)
             
-def test_reconf_memorable_with_backup(set_up, insert_records, cleanup_backups):
+def test_reconf_memorable_with_backup(insert_records, cleanup_backups):
     old_mem = "memorable"
     new_mem = 'another'
     secrets = du.list_secrets("d1") + du.list_secrets("d2")
@@ -375,7 +362,7 @@ def test_reconf_memorable_with_backup(set_up, insert_records, cleanup_backups):
     arn = du.reconf_memorable(secrets, old_mem, new_mem, True)
     assert arn is not None
         
-def test_reconf_salt_key(set_up, insert_records):
+def test_reconf_salt_key(insert_records):
     old_mem = "memorable"
     c_pwd = 'carpiato'
     new_salt_key = cu.encrypt_key(c_pwd)
@@ -395,7 +382,7 @@ def test_reconf_salt_key(set_up, insert_records):
     with pytest.raises(cryptography.fernet.InvalidToken):
         du.get_secret('d1', 'a1', old_mem)
             
-def test_query_records(set_up, insert_records):
+def test_query_records(insert_records):
     #test with no filter
     ns = du.count_secrets()
     secrets = du.query_secrets_by_field(None, None)
@@ -421,7 +408,7 @@ def test_query_records(set_up, insert_records):
     secrets = du.query_secrets_by_field("1", "2")
     assert 1 == len(secrets)
     
-def test_get_all_secrets(set_up, insert_records):
+def test_get_all_secrets(insert_records):
     secrets = du.get_all_secrets('memorable')
     assert 3 == len(secrets)
     assert 'd1' == secrets[0]['domain']

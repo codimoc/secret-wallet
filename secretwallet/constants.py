@@ -20,6 +20,7 @@ PRE_SALT = b"Nel mezzo del cammin di nostra vita"
 
 #dynamoDB variables
 SECRET_ACCESS_TABLE='access_secrets'
+TEST_TABLE = 'test'
 
 #AWS configuration
 AWS_PROFILE='secret-wallet'
@@ -42,6 +43,10 @@ LOG_FILE = f"{CONFIG_FOLDER}/secretwallet.log"
 LOG_LEVEL = "info"
 LOG_MAX_FILE_SIZE =  1000000 #1MB
 LOG_BACKUP_COUNT  = 1        #number of rotated backup files that are retained
+
+#type of storage
+DB_AWS_DYNAMO = 0
+DB_LOCAL_SQLITE = 1
 
 def is_posix()->bool:
     return os.name=='posix'
@@ -83,6 +88,9 @@ class Parameters(object):
     def set_data(self,data):
         self.__data = dict(data)
         self.update_loggers()
+        
+    def get_data(self):
+        return self.__data
 
     def register_logger(self, name, logger):
         self.__loggers[name] = logger
@@ -140,6 +148,12 @@ class Parameters(object):
             return self.__data['table_name']
         else:
             return SECRET_ACCESS_TABLE
+        
+    def get_storage_type(self):
+        if 'storage_type' in self.__data:
+            return self.__data['storage_type']
+        else:
+            return DB_AWS_DYNAMO
 
     def set_table_name(self, table):
         self.__data['table_name'] = table

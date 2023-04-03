@@ -13,6 +13,7 @@ from secretwallet.constants import parameters
 
 @pytest.fixture
 def set_up():
+    old_data = parameters.get_data()
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path,'data','.secretwallet','test.json')
     yield conf_file
@@ -20,7 +21,8 @@ def set_up():
     if os.path.exists(conf_file):
         os.remove(conf_file)
         os.rmdir(os.path.dirname(conf_file))
-    parameters.clear()
+    #reset the original parameters
+    parameters.set_data(old_data)
     
         
 def test_get_encrypted_key():

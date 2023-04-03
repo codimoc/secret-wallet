@@ -219,6 +219,7 @@ class Parser(object):
                 sec = get_secret(args.domain, args.access, None, None, False) #no decryption
                 info = sec['info']
                 del info[args.info_key]
+                #TODO: be careful. Here the disctionary passed is already encrypted
                 update_secret_info_dictionary(args.domain, args.access, info)
             elif args.domain is not None and args.access is not None:
                 iou.confirm_delete([(args.domain, args.access)])
