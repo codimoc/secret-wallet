@@ -12,7 +12,6 @@ from boto3.dynamodb.conditions import Key
 from secretwallet.constants import parameters
 from secretwallet.utils.cryptutils import encrypt, encrypt_key, decrypt
 from secretwallet.utils.logging import get_logger
-from collections import namedtuple
 
 import secretwallet.utils.ioutils as iou
 
@@ -21,8 +20,6 @@ logger = get_logger(__name__, parameters.get_log_level())
 parameters.register_logger(__name__, logger)
 
 SEPARATOR="#-#"
-
-Secret = namedtuple('Secret', ['domain','access','user_id','password','info', 'encrypted_info','info_key','info_value'])
 
 def _get_table():
     #TODO: manage Session in a better way. The table resource should be stored in the Session

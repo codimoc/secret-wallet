@@ -76,10 +76,11 @@ def encrypt_info(info,mem_pwd, salt):
     salt         a string representation of the salt (optional)    
     output:
     The encrypted dictionary of extra information 
-    """    
+    """
     einfo = {}
-    for key, value in info.items():
-        einfo[key] = encrypt(value, mem_pwd, salt) #in string format
+    if info is not None:
+        for key, value in info.items():
+            einfo[key] = encrypt(value, mem_pwd, salt) #in string format
     return einfo
 
 def decrypt_info(info, mem_pwd, salt):
@@ -91,11 +92,8 @@ def decrypt_info(info, mem_pwd, salt):
     output:
     The decrypted dictionary of extra information 
     """    
-    einfo = {}
-    for key, value in info.items():
-        einfo[key] = encrypt(value, mem_pwd, salt) #in string format
-    return einfo    
     dinfo = {}
-    for key, value in info.items():
-        dinfo[key] = decrypt(value, mem_pwd, salt) #from string format
+    if info is not None:
+        for key, value in info.items():
+            dinfo[key] = decrypt(value, mem_pwd, salt) #from string format
     return dinfo

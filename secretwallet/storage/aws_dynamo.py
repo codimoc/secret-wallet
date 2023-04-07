@@ -1,8 +1,8 @@
 import boto3
+from datetime import datetime
 from boto3.dynamodb.conditions import Key
-from ..utils.dbutils import Secret
+from ..constants import Secret
 from ..utils.cryptutils import encrypt, encrypt_info
-from docker import secret_wallet
 
 #some utility functions
 def make_secret(d:dict)->Secret:
@@ -100,7 +100,7 @@ class AWSDynamoTable:
                       secret:Secret,
                       mem_pwd:str,
                       salt:str,
-                      timestamp:str) -> None:
+                      timestamp:str = datetime.now().isoformat()) -> None:
         "insert a record in the secrets table"
         self.get_table().put_item(Item={'domain'    : secret.domain,
                                         'access'    : secret.access,
@@ -123,7 +123,7 @@ class AWSDynamoTable:
                                   secret:Secret,
                                   mem_pwd:str,
                                   salt:str,
-                                  timestamp:str) -> None:
+                                  timestamp:str = datetime.now().isoformat()) -> None:
         "update a record in the secrets table, with a maximum of one extra info stored in the Secret record"
         
         # #domain is the simbolyc field name and maps table column 'domain' to id #domain
@@ -168,7 +168,7 @@ class AWSDynamoTable:
                                       secret: Secret,
                                       mem_pwd:str,
                                       salt:str,
-                                      timestamp:str) -> None:
+                                      timestamp:str = datetime.now().isoformat()) -> None:
         "update the info dictionary for a record in the secrets table"
         
         einfo = None
@@ -211,8 +211,8 @@ class AWSDynamoTable:
             resp = self.get_table().query(KeyConditionExpression=Key('domain').eq(secret.domain))
         else:
             resp = self.get_table().scan()
-            for i in resp['Items']:
-                secrets.append(Secret(domain=i['domain'],access=i['access']))
+        for i in resp['Items']:
+            secrets.append(Secret(domain=i['domain'],access=i['access']))
         #sort the list
         secrets.sort(key=lambda x: x.domain+x.access)
 

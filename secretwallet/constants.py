@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from os.path import expanduser, exists
+from collections import namedtuple
 
 
 if 'HOME_DIR' in globals():
@@ -260,3 +261,8 @@ class Parameters(object):
 
 #single object
 parameters = Parameters()
+
+# a message class containing secret info
+secret_fields = ['domain','access','user_id','password','info', 'encrypted_info','info_key','info_value']
+default_vals = [None]*len(secret_fields)
+Secret = namedtuple('Secret', secret_fields, defaults=default_vals)
