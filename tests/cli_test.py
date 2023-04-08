@@ -126,10 +126,10 @@ def test_update_info(cli_test_set_up):
     sys.argv=['secret_wallet','set','-d',DOMAIN, '-a', ACCESS, '-ik','second_key','-iv','second_value']
     Parser()
     res = du.get_secret(DOMAIN, ACCESS, 'memorable', parameters.get_salt_key())
-    assert 3 == len(res['info'])
-    assert 'value' == res['info']['key']
-    assert 'first_value' == res['info']['first_key']
-    assert 'second_value' == res['info']['second_key']
+    assert 3 == len(res.info)
+    assert 'value' == res.info['key']
+    assert 'first_value' == res.info['first_key']
+    assert 'second_value' == res.info['second_key']
 
 @pytest.mark.integration
 def test_rename_secret(cli_test_set_up):

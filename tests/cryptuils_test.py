@@ -85,4 +85,15 @@ def test_encrypt_decrypt_no_config():
     esecret2 = cu.encrypt(secret, m_pwd, key)
     v2 = cu.decrypt(esecret2, m_pwd, key)
     assert v1 == v2
-    assert v1 == secret        
+    assert v1 == secret
+    
+def test_encrypt_decrypt_info():
+    c_pwd = u"passwd"
+    m_pwd = u"memorabile"
+    key = cu.encrypt_key(c_pwd)
+
+    info={'first':'value_1','second':'value_2'}
+    ien = cu.encrypt_info(info, m_pwd, key)
+    ide = cu.decrypt_info(ien, m_pwd, key)
+    for key in info:
+        assert ide[key] == info[key]

@@ -4,13 +4,17 @@ from boto3.dynamodb.conditions import Key
 from ..constants import Secret
 from ..utils.cryptutils import encrypt, encrypt_info
 
+MAX_REPEAT = 3
+SUCCESS = 200
+
 #some utility functions
 def make_secret(d:dict)->Secret:
         return Secret(domain=d['domain'],
                       access=d['access'],
                       user_id = d['uid'],
                       password = d['pwd'],
-                      info = d['info'])    
+                      info = d['info'],
+                      timestamp = d['timestamp'])    
 
 """
     Proxy class for a table in a AWS DynamoDB database
@@ -49,21 +53,25 @@ class AWSDynamoTable:
         dynamodb = session.resource('dynamodb')
         dynamodb.Table(self.table_name).delete()
         
-    def has_table(self)->bool:
+    def has_table(self, table_name:str=None)->bool:
         "Checks if the table exists"
+        if table_name is None:
+            table_name = self.table_name
         session = boto3.session.Session(profile_name=self.profile_name)
         dynamodb = session.resource('dynamodb')
         names = [x.table_name for x in dynamodb.tables.all()]
-        return self.table_name in names
+        return table_name in names
     
-    def create_table(self):
+    def create_table(self, table_name:str=None):
         "Creates a table if it does not exist"
-        if self.has_table():
+        if table_name is None:
+            table_name = self.table_name        
+        if self.has_table(table_name):
             return
         session = boto3.session.Session(profile_name=self.profile_name)
         dynamodb = session.resource('dynamodb')
         dynamodb.create_table(
-            TableName=f"{self.table_name}",
+            TableName=f"{table_name}",
             # Declare your Primary Key in the KeySchema argument
             KeySchema=[
                 {
@@ -102,12 +110,35 @@ class AWSDynamoTable:
                       salt:str,
                       timestamp:str = datetime.now().isoformat()) -> None:
         "insert a record in the secrets table"
-        self.get_table().put_item(Item={'domain'    : secret.domain,
-                                        'access'    : secret.access,
-                                        'uid'       : encrypt(secret.user_id, mem_pwd, salt),
-                                        'pwd'       : encrypt(secret.password, mem_pwd, salt),
-                                        'info'      : encrypt_info(secret.info, mem_pwd, salt),
-                                        'timestamp' : timestamp})
+        rep = 0
+        status = 0
+        #if the insert did not work, repeat up to MAX_REPEAT times
+        while status != SUCCESS and rep < MAX_REPEAT:
+            resp = self.get_table().put_item(Item={'domain'    : secret.domain,
+                                                   'access'    : secret.access,
+                                                   'uid'       : encrypt(secret.user_id, mem_pwd, salt),
+                                                   'pwd'       : encrypt(secret.password, mem_pwd, salt),
+                                                   'info'      : encrypt_info(secret.info, mem_pwd, salt),
+                                                   'timestamp' : timestamp})
+            status = resp['ResponseMetadata']['HTTPStatusCode']
+            rep +=1
+
+    def insert_encrypted_record(self,
+                                secret:Secret,
+                                timestamp:str = datetime.now().isoformat()) -> None:
+        "insert a pre-encrypted record in the secrets table"
+        rep = 0
+        status = 0
+        #if the insert did not work, repeat up to MAX_REPEAT times
+        while status != SUCCESS and rep < MAX_REPEAT:        
+            resp = self.get_table().put_item(Item={'domain'    : secret.domain,
+                                                   'access'    : secret.access,
+                                                   'uid'       : secret.user_id,
+                                                   'pwd'       : secret.password,
+                                                   'info'      : secret.info,
+                                                   'timestamp' : timestamp})
+            status = resp['ResponseMetadata']['HTTPStatusCode']
+            rep +=1            
         
     def get_record(self,
                    secret: Secret) -> Secret:
@@ -149,36 +180,35 @@ class AWSDynamoTable:
             expression_values.update({':info':encrypt(secret.info_value, mem_pwd, salt)})
             update_expression += ' #info.#key = :info,'
             
-            #if nothing to update then return
-            if update_expression == 'SET':
-                return
-            #now add the timestamp
-            expression_attributes.update({'#timestamp':'timestamp'})
-            expression_values.update({':ts': timestamp})
-            update_expression += ' #timestamp = :ts'
+        #if nothing to update then return
+        if update_expression == 'SET':
+            return
+        #now add the timestamp
+        expression_attributes.update({'#timestamp':'timestamp'})
+        expression_values.update({':ts': timestamp})
+        update_expression += ' #timestamp = :ts'
 
-        self.get_table().update_item(Key={"domain": secret.domain, "access": secret.access},
-                                     ExpressionAttributeNames  = expression_attributes,
-                                     ExpressionAttributeValues = expression_values,
-                                     UpdateExpression          = update_expression,
-                                     ConditionExpression       = condition_expression
-                                     )
+        rep = 0
+        status = 0
+        #if the insert did not work, repeat up to MAX_REPEAT times
+        while status != SUCCESS and rep < MAX_REPEAT:
+            resp = self.get_table().update_item(Key={"domain": secret.domain, "access": secret.access},
+                                                ExpressionAttributeNames  = expression_attributes,
+                                                ExpressionAttributeValues = expression_values,
+                                                UpdateExpression          = update_expression,
+                                                ConditionExpression       = condition_expression
+                                                )
+            status = resp['ResponseMetadata']['HTTPStatusCode']
+            rep +=1
         
     def update_record_info_dictionary(self,
                                       secret: Secret,
-                                      mem_pwd:str,
-                                      salt:str,
                                       timestamp:str = datetime.now().isoformat()) -> None:
         "update the info dictionary for a record in the secrets table"
         
-        einfo = None
-        if secret.encrypted_info is not None:
-            einfo = secret.encrypted_info
-        elif secret.info is not None:
-            einfo = encrypt_info(secret.info, mem_pwd, salt)
+        einfo = secret.encrypted_info
         if einfo is None:
             return
-        
         
         expression_attributes = {'#domain':'domain',
                                  '#access':'access',
@@ -191,17 +221,29 @@ class AWSDynamoTable:
         update_expression = "SET #info = :info, #timestamp = :ts"
         condition_expression = "#domain = :domain AND #access = :access"
 
-        self.get_table().update_item(Key={"domain": secret.domain, "access": secret.access},
-                                     ExpressionAttributeNames  = expression_attributes,
-                                     ExpressionAttributeValues = expression_values,
-                                     UpdateExpression          = update_expression,
-                                     ConditionExpression       = condition_expression
-                                     )
+        rep = 0
+        status = 0
+        #if the insert did not work, repeat up to MAX_REPEAT times
+        while status != SUCCESS and rep < MAX_REPEAT:        
+            resp = self.get_table().update_item(Key={"domain": secret.domain, "access": secret.access},
+                                                ExpressionAttributeNames  = expression_attributes,
+                                                ExpressionAttributeValues = expression_values,
+                                                UpdateExpression          = update_expression,
+                                                ConditionExpression       = condition_expression
+                                                )
+            status = resp['ResponseMetadata']['HTTPStatusCode']
+            rep +=1
         
     def delete_record(self, secret:Secret) -> None:
         "delete a single record based on domain and access keys"
-        self.get_table().delete_item(Key={'domain'  : secret.domain,
-                                          'access'  : secret.access})
+        rep =0
+        status =0
+        #if the insert did not work, repeat up to MAX_REPEAT times 
+        while status != SUCCESS and rep < MAX_REPEAT:       
+            resp = self.get_table().delete_item(Key={'domain'  : secret.domain,
+                                                     'access'  : secret.access})
+            status = resp['ResponseMetadata']['HTTPStatusCode']
+            rep +=1
         
     def query_record(self, secret:Secret) -> list: 
         "return a list of secrets matching the domain key passed"

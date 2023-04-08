@@ -1,6 +1,6 @@
 import pytest
 from secretwallet.constants import parameters, Secret
-from secretwallet.utils.cryptutils import decrypt,decrypt_info
+from secretwallet.utils.cryptutils import decrypt,decrypt_info, encrypt_info
 import secretwallet.storage.aws_dynamo as ad
 
 TEST_DOMAIN = u'test_domain'
@@ -18,13 +18,15 @@ def make_test_secret(domain=TEST_DOMAIN,
                      info_key=TEST_KEY,
                      info_value=TEST_VALUE):
     info = {info_key: info_value}
+    einfo = dict()
     return Secret(domain=domain,
                   access=access,
                   user_id=user_id,
                   password=password,
                   info_key=info_key,
                   info_value=info_value,
-                  info = info)
+                  info = info,
+                  encrypted_info = einfo)
 
 @pytest.fixture
 def set_up_table():
@@ -76,10 +78,14 @@ def test_update_secret_info_dictionary(set_up_table):
     secret_in = make_test_secret()
     table.insert_record(secret_in, TEST_MEM_PWD, parameters.get_salt_key())
     #now do some changes to the info dictionary
-    secret_in.info.clear()
-    secret_in.info["first key"] = u'first value'
-    secret_in.info["seconf key"] = u'second value'
-    table.update_record_info_dictionary(secret_in, TEST_MEM_PWD, parameters.get_salt_key())
+    info = dict()
+    info["first key"] = u'first value'
+    info["second key"] = u'second value'
+    einfo = encrypt_info(info, TEST_MEM_PWD, parameters.get_salt_key())
+    secret_in.encrypted_info.clear()
+    secret_in.encrypted_info["first key"] = einfo["first key"]
+    secret_in.encrypted_info["second key"] = einfo["second key"]
+    table.update_record_info_dictionary(secret_in)
     #and extract the new secret 
     secret_out = table.get_record(Secret(domain=TEST_DOMAIN,access=TEST_ACCESS))
     #tests
@@ -89,7 +95,7 @@ def test_update_secret_info_dictionary(set_up_table):
     assert TEST_PWD == decrypt(secret_out.password,TEST_MEM_PWD,parameters.get_salt_key())
     dinfo = decrypt_info(secret_out.info, TEST_MEM_PWD, parameters.get_salt_key())
     dinfo["first key"] = u'first value'
-    dinfo["seconf key"] = u'second value'
+    dinfo["second key"] = u'second value'
     
 def test_query_secrets(set_up_table):
     table = set_up_table    

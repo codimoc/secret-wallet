@@ -11,7 +11,7 @@ import shlex
 import sys
 
 import readline
-from secretwallet.constants import parameters
+from secretwallet.constants import parameters, Secret
 from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
 from secretwallet.session.service import start_my_session
@@ -217,12 +217,13 @@ class Parser(object):
             if args.domain is not None and args.access is not None and args.info_key is not None:
                 iou.confirm_delete_key(args.domain, args.access, args.info_key)
                 sec = get_secret(args.domain, args.access, None, None, False) #no decryption
-                info = sec['info']
+                info = sec.info
                 del info[args.info_key]
-                #TODO: be careful. Here the disctionary passed is already encrypted
+                #Here the dictionary passed is already encrypted
                 update_secret_info_dictionary(args.domain, args.access, info)
             elif args.domain is not None and args.access is not None:
-                iou.confirm_delete([(args.domain, args.access)])
+                secret = Secret(domain=args.domain, access=args.access)
+                iou.confirm_delete([secret])
                 delete_secret(args.domain, args.access)
             else:
                 secrets = list_secrets(args.domain)
@@ -273,7 +274,8 @@ class Parser(object):
                     args.new_domain = args.domain
                 if args.new_access is None:
                     args.new_access = args.access
-                iou.confirm_rename([(args.domain, args.access)])
+                secret = Secret(domain=args.domain, access=args.access)
+                iou.confirm_rename([secret])
                 rename_secret(args.domain, args.access, args.new_domain, args.new_access)
         except Exception as e:
             iou.my_output(repr(e))
@@ -367,7 +369,7 @@ class Parser(object):
                 return
             try:
                 memorable, need_session = pm.get_memorable_password(False)
-                iou.display_secret(get_secret(sec[0], sec[1], memorable))
+                iou.display_secret(get_secret(sec.domain, sec.access, memorable))
                 if need_session:
                     start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
             except Exception as e:
@@ -637,7 +639,7 @@ class Parser(object):
         try:
             memorable, need_session = pm.get_memorable_password(False)
 
-            secrets = get_all_secrets(memorable)
+            secrets = get_all_secrets(memorable,False) #False -> return as Secret
             if (args.file is not None):
                 with open(args.file,'a') as f:
                     with contextlib.redirect_stdout(f):
@@ -670,7 +672,7 @@ class Parser(object):
         try:
             memorable, need_session = pm.get_memorable_password(False)
 
-            secrets = get_all_secrets(memorable)
+            secrets = get_all_secrets(memorable, True) # True -> return as dictionary
             if (args.file is not None):
                 with open(args.file,'w') as f:
                     with contextlib.redirect_stdout(f):
