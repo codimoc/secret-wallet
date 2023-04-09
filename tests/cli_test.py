@@ -532,7 +532,7 @@ def test_dump_to_file(cli_test_set_up):
         os.remove(path)
 
 @pytest.mark.integration
-def test_save(cli_test_set_up):
+def test_save_decrypted(cli_test_set_up):
     domain1 = 'pera'
     access1 = "cotta"
     domain2 = 'bella'
@@ -549,14 +549,14 @@ def test_save(cli_test_set_up):
     assert du.has_secret(domain1, access1)
     assert du.has_secret(domain2, access2)
 
-    sys.argv=['secret_wallet','save']
+    sys.argv=['secret_wallet','save','-d']
     with io.StringIO() as buf, redirect_stdout(buf):
         Parser()
         assert "first record" in buf.getvalue() #get the inner value in the secret
         assert "second record" in buf.getvalue()
 
 @pytest.mark.integration
-def test_save_to_file(cli_test_set_up):
+def test_save_to_file_decrypted(cli_test_set_up):
     path = "test_dump_to_file.json"
 
     # first clean up the file if it exists
@@ -582,7 +582,7 @@ def test_save_to_file(cli_test_set_up):
 
     #now do the test
     try:
-        sys.argv=['secret_wallet','save','-f', path]
+        sys.argv=['secret_wallet','save','-f', path,'-d']
         Parser()
 
         #now assert the file exists
@@ -600,7 +600,7 @@ def test_save_to_file(cli_test_set_up):
         os.remove(path)
 
 @pytest.mark.integration
-def test_load_from_file(cli_test_set_up):
+def test_load_from_file_decrypted(cli_test_set_up):
     path = "test_backup_file.json"
 
     # first clean up the file if it exists
@@ -637,7 +637,7 @@ def test_load_from_file(cli_test_set_up):
 
     #now save to a file
     try:
-        sys.argv=['secret_wallet','save','-f', path]
+        sys.argv=['secret_wallet','save','-f', path,'-d']
         Parser()
 
         #now assert the file exists
@@ -648,7 +648,7 @@ def test_load_from_file(cli_test_set_up):
         assert 0 == len(du.list_secrets(None))
 
         #and reload from file
-        sys.argv=['secret_wallet','load','-f', path]
+        sys.argv=['secret_wallet','load','-f', path, '-d']
         Parser()
 
         assert du.has_secret(domain1, access1)
@@ -661,7 +661,7 @@ def test_load_from_file(cli_test_set_up):
 
         #now try to reload the file without cleaning the table,
         #it should still work without side effects
-        sys.argv=['secret_wallet','load','-f', path]
+        sys.argv=['secret_wallet','load','-f', path,'-d']
         Parser()
 
         assert du.has_secret(domain1, access1)

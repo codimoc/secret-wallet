@@ -106,6 +106,31 @@ def insert_secret(domain, access, uid, pwd, info, mem_pwd, salt=None, timestamp 
                     password = pwd,
                     info = info)
     _get_table().insert_record(secret, mem_pwd, salt, timestamp)
+    
+def insert_encrypted_secret(domain, access, uid, pwd, info, timestamp = None):
+    """Insert a secret access record in the cloud DB
+    input:
+    domain     the domain, i.e. logical context, of the secret
+    access     the secret sub-domain or access specification
+    uid        the encrypted user id for that access
+    pwd        the encrypted password for that access
+    info       a map of informations (encryted)
+    timestamp  the secret timestamp. If not passed it is calculated
+    """
+    if timestamp is None:
+        timestamp = datetime.now().isoformat()
+    if uid is None:
+        uid = ""
+    if pwd is None:
+        pwd = ""
+    if info is None:
+        info = {}
+    secret = Secret(domain = domain,
+                    access = access,
+                    user_id = uid,
+                    password = pwd,
+                    info = info)
+    _get_table().insert_encrypted_record(secret,timestamp)    
 
 def update_secret(domain, access, uid, pwd, info_key, info_value, mem_pwd, salt=None):
     """Update a secret access record in the cloud DB
@@ -203,7 +228,7 @@ def delete_secrets(secrets):
     for s in secrets:
         delete_secret(s.domain, s.access)
 
-def get_secret(domain, access, mem_pwd, salt=None, need_decrypt=True):
+def get_secret(domain, access, mem_pwd=None, salt=None, needs_decrypt=True):
     """Retrieves a secret by primary key
     input:
     domain          the domain, i.e. logical context, of the secret
@@ -219,7 +244,7 @@ def get_secret(domain, access, mem_pwd, salt=None, need_decrypt=True):
 
     filter_secret = Secret(domain = domain, access = access)
     secret = _get_table().get_record(filter_secret)
-    if need_decrypt:
+    if needs_decrypt:
         return decrypt_secret(secret, mem_pwd, salt)
     else:
         return secret
@@ -235,21 +260,22 @@ def list_secrets(domain):
     filter_secret = Secret(domain=domain)
     return _get_table().query_record(filter_secret)
 
-def get_all_secrets(mem_pwd, as_dictionary=True):
+def get_all_secrets(mem_pwd=None, as_dictionary=True, needs_decrypt = True):
     """Get all secrets and return them as a list of dictionaries or secret objects
     input:
     mem_pwd        the memorable password
     as_dictionary  a flag to select the type ot representation: dictionary or Secret
+    needs_decrypt  a flag indicatinf that the returned secrets should be decrypted
     output:
     a list of secrets as dictionaries or secret objects depending on the flag passed
     """
     secrets = []
     for s in list_secrets(None):
         if as_dictionary:
-            secret = get_secret(s.domain, s.access, mem_pwd) #decrypted
+            secret = get_secret(s.domain, s.access, mem_pwd, None, needs_decrypt) #decrypted
             secrets.append(secret_to_dictionary(secret, needs_decrypt=False))
         else:
-            secrets.append(get_secret(s.domain, s.access, mem_pwd)) #decrypted
+            secrets.append(get_secret(s.domain, s.access, mem_pwd, None, needs_decrypt)) #decrypted
     return secrets
 
 def query_secrets_by_field(domain_sub, access_sub):

@@ -143,10 +143,16 @@ class AWSDynamoTable:
     def get_record(self,
                    secret: Secret) -> Secret:
         "retrieves an encripted record keyed by domain and access, as a dictionary"
-        resp = self.get_table().get_item(Key={'domain'  : secret.domain,
-                                              'access'  : secret.access})
-        if 'Item' in resp:
-            return make_secret(resp['Item'])
+        rep = 0
+        status = 0
+        #if the insert did not work, repeat up to MAX_REPEAT times
+        while status != SUCCESS and rep < MAX_REPEAT:        
+            resp = self.get_table().get_item(Key={'domain'  : secret.domain,
+                                                  'access'  : secret.access})
+            status = resp['ResponseMetadata']['HTTPStatusCode']
+            rep +=1            
+            if 'Item' in resp:
+                return make_secret(resp['Item'])
         return None
         
     
