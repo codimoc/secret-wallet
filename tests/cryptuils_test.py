@@ -13,6 +13,7 @@ from secretwallet.constants import parameters
 
 @pytest.fixture
 def set_up():
+    old_data = parameters.get_data()
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path,'data','.secretwallet','test.json')
     yield conf_file
@@ -20,7 +21,8 @@ def set_up():
     if os.path.exists(conf_file):
         os.remove(conf_file)
         os.rmdir(os.path.dirname(conf_file))
-    parameters.clear()
+    #reset the original parameters
+    parameters.set_data(old_data)
     
         
 def test_get_encrypted_key():
@@ -83,4 +85,15 @@ def test_encrypt_decrypt_no_config():
     esecret2 = cu.encrypt(secret, m_pwd, key)
     v2 = cu.decrypt(esecret2, m_pwd, key)
     assert v1 == v2
-    assert v1 == secret        
+    assert v1 == secret
+    
+def test_encrypt_decrypt_info():
+    c_pwd = u"passwd"
+    m_pwd = u"memorabile"
+    key = cu.encrypt_key(c_pwd)
+
+    info={'first':'value_1','second':'value_2'}
+    ien = cu.encrypt_info(info, m_pwd, key)
+    ide = cu.decrypt_info(ien, m_pwd, key)
+    for key in info:
+        assert ide[key] == info[key]

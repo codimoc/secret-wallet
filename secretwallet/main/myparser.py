@@ -11,13 +11,13 @@ import shlex
 import sys
 
 import readline
-from secretwallet.constants import parameters
+from secretwallet.constants import parameters, Secret
 from secretwallet.main.configuration import list_configuration, get_configuration, set_configuration_data
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected
 from secretwallet.session.service import start_my_session
 from secretwallet.utils.cryptutils import encrypt_key
-from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, list_secrets, update_secret, \
-                                       update_secret_info_dictionary, delete_secret, delete_secrets, rename_secret, \
+from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, insert_encrypted_secret, list_secrets, \
+                                       update_secret, update_secret_info_dictionary, delete_secret, delete_secrets, rename_secret, \
                                        reconf_memorable, reconf_salt_key, query_secrets_by_field, query_secrets_by_pattern, \
                                        get_all_secrets
 from secretwallet.utils.logging import get_logger
@@ -217,11 +217,13 @@ class Parser(object):
             if args.domain is not None and args.access is not None and args.info_key is not None:
                 iou.confirm_delete_key(args.domain, args.access, args.info_key)
                 sec = get_secret(args.domain, args.access, None, None, False) #no decryption
-                info = sec['info']
+                info = sec.info
                 del info[args.info_key]
+                #Here the dictionary passed is already encrypted
                 update_secret_info_dictionary(args.domain, args.access, info)
             elif args.domain is not None and args.access is not None:
-                iou.confirm_delete([(args.domain, args.access)])
+                secret = Secret(domain=args.domain, access=args.access)
+                iou.confirm_delete([secret])
                 delete_secret(args.domain, args.access)
             else:
                 secrets = list_secrets(args.domain)
@@ -272,7 +274,8 @@ class Parser(object):
                     args.new_domain = args.domain
                 if args.new_access is None:
                     args.new_access = args.access
-                iou.confirm_rename([(args.domain, args.access)])
+                secret = Secret(domain=args.domain, access=args.access)
+                iou.confirm_rename([secret])
                 rename_secret(args.domain, args.access, args.new_domain, args.new_access)
         except Exception as e:
             iou.my_output(repr(e))
@@ -366,7 +369,7 @@ class Parser(object):
                 return
             try:
                 memorable, need_session = pm.get_memorable_password(False)
-                iou.display_secret(get_secret(sec[0], sec[1], memorable))
+                iou.display_secret(get_secret(sec.domain, sec.access, memorable))
                 if need_session:
                     start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
             except Exception as e:
@@ -636,7 +639,7 @@ class Parser(object):
         try:
             memorable, need_session = pm.get_memorable_password(False)
 
-            secrets = get_all_secrets(memorable)
+            secrets = get_all_secrets(memorable,False) #False -> return as Secret
             if (args.file is not None):
                 with open(args.file,'a') as f:
                     with contextlib.redirect_stdout(f):
@@ -662,24 +665,40 @@ class Parser(object):
                             dest='file',
                             required=False,
                             help='The output file. If it is not specified it outputs the json structure to the console (default system out stream)')
+        parser.add_argument('-d',
+                        dest='needs_decrypt',
+                        required=False,
+                        default=False,
+                        action='store_true',
+                        help='A flag. If set, all secret are stored or displayed after being decrypted. It defaults to true (encrypted)')
 
         args = iou.my_parse(parser,sys.argv[2:])
 
         iou.my_output('Starting a secret wallet save with parameters %s'%args)
         try:
-            memorable, need_session = pm.get_memorable_password(False)
-
-            secrets = get_all_secrets(memorable)
-            if (args.file is not None):
-                with open(args.file,'w') as f:
-                    with contextlib.redirect_stdout(f):
-                        json.dump(secrets, f) #send to file
-            else:
-                iou.my_output(json.dumps(secrets), with_logging=False)
-
-            #here start the session (at the end so that we can daemonize)
-            if need_session:
-                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
+            if args.needs_decrypt:
+                memorable, need_session = pm.get_memorable_password(False)
+    
+                secrets = get_all_secrets(memorable, True) # True -> return as dictionary
+                if (args.file is not None):
+                    with open(args.file,'w') as f:
+                        with contextlib.redirect_stdout(f):
+                            json.dump(secrets, f) #send to file
+                else:
+                    iou.my_output(json.dumps(secrets), with_logging=False)
+    
+                #here start the session (at the end so that we can daemonize)
+                if need_session:
+                    start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
+            else: # encrypted
+                secrets = get_all_secrets(as_dictionary=True, needs_decrypt=False)
+                if (args.file is not None):
+                    with open(args.file,'w') as f:
+                        with contextlib.redirect_stdout(f):
+                            json.dump(secrets, f) #send to file
+                else:
+                    iou.my_output(json.dumps(secrets), with_logging=False)
+    
         except Exception as e:
             iou.my_output(repr(e))
 
@@ -694,23 +713,39 @@ class Parser(object):
                             dest='file',
                             required=True,
                             help='The input file in json format, containing the backed-up secrets.')
+        parser.add_argument('-d',
+                            dest='needs_decrypt',
+                            required=False,
+                            default=False,
+                            action='store_true',
+                            help='A flag. If set, all secret are loaded from decrypted values. It defaults to true (encrypted)')        
 
         args = iou.my_parse(parser,sys.argv[2:])
         iou.my_output('Starting a secret wallet load with parameters %s'%args)
         try:
-            memorable, need_session = pm.get_memorable_password(True)
-
-            with open(args.file,'r') as f:
-                secrets = json.load(f)
-                for secret in secrets:
-                    domain = secret["domain"]
-                    access = secret["access"]
-                    if not has_secret(domain, access):
-                        iou.my_output(f"inserting secret (domain:{domain}, access:{access})")
-                        insert_secret(domain, access, secret["uid"], secret["pwd"], secret["info"] , memorable, timestamp=secret["timestamp"])
-
-            #here start the session (at the end so that we can daemonize)
-            if need_session:
-                start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
+            if args.needs_decrypt:
+                memorable, need_session = pm.get_memorable_password(True)
+    
+                with open(args.file,'r') as f:
+                    secrets = json.load(f)
+                    for secret in secrets:
+                        domain = secret["domain"]
+                        access = secret["access"]
+                        if not has_secret(domain, access):
+                            iou.my_output(f"inserting secret (domain:{domain}, access:{access})")
+                            insert_secret(domain, access, secret["uid"], secret["pwd"], secret["info"] , memorable, timestamp=secret["timestamp"])
+    
+                #here start the session (at the end so that we can daemonize)
+                if need_session:
+                    start_my_session(memorable, parameters.get_session_lifetime(), parameters.get_session_timeout())
+            else: #encrypted
+                with open(args.file,'r') as f:
+                    secrets = json.load(f)
+                    for secret in secrets:
+                        domain = secret["domain"]
+                        access = secret["access"]
+                        if not has_secret(domain, access):
+                            iou.my_output(f"inserting secret (domain:{domain}, access:{access})")
+                            insert_encrypted_secret(domain, access, secret["uid"], secret["pwd"], secret["info"],timestamp=secret["timestamp"])
         except Exception as e:
             iou.my_output(repr(e))

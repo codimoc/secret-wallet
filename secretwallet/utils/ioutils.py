@@ -8,14 +8,14 @@ logger = get_logger(__name__, parameters.get_log_level())
 parameters.register_logger(__name__, logger)
 
 def display_list(message, secrets):
-    field_lenght = max([len(x[0]) for x in secrets], default=0)+5
+    field_lenght = max([len(x.domain) for x in secrets], default=0)+5
     format_header = f"<%-{field_lenght-1}s: <access>"
     format_record = f"%-{field_lenght}s: %s"
     print("**********************************************************")
     print(f"{message}: ")
     print(format_header%'domain>')
-    for d,a in secrets:
-        print(format_record%(d,a))
+    for s in secrets:
+        print(format_record%(s.domain,s.access))
     print("**********************************************************")
 
 def display_numbered_list(message, secrets):
@@ -26,8 +26,8 @@ def display_numbered_list(message, secrets):
     print(f"{message}: ")
     print(format_header%('<num>','domain>'))
     idx = 1;
-    for d,a in secrets:
-        print(format_record%(idx, d, a))
+    for s in secrets:
+        print(format_record%(idx, s.domain, s.access))
         idx += 1
     print("**********************************************************")
 
@@ -138,16 +138,16 @@ def display_secret(secret):
     "Print a secret in a fixed format"
     print("**********************************************************")
     print("Secret id:")
-    print(f"domain              : {secret['domain']}")
-    print(f"access              : {secret['access']}")
+    print(f"domain              : {secret.domain}")
+    print(f"access              : {secret.access}")
     print("\nSecret credentials:")
-    print(f"login               : {secret['uid']}")
-    print(f"password            : {secret['pwd']}")
-    if 'info' in secret:
+    print(f"login               : {secret.user_id}")
+    print(f"password            : {secret.password}")
+    if secret.info is not None:
         print("\nSecret extra info:")
-        for k,v in secret['info'].items():
+        for k,v in secret.info.items():
             print(f"{k:20}: {v}")
-    print(f"\nLast updated        : {secret['timestamp']}")
+    print(f"\nLast updated        : {secret.timestamp}")
     print("**********************************************************")
 
 def display_all_secrets(secrets):

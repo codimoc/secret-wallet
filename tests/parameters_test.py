@@ -1,7 +1,7 @@
 import json
 import os
 import pytest
-from secretwallet.constants import parameters, Parameters, AWS_PROFILE, SECRET_ACCESS_TABLE
+from secretwallet.constants import parameters, Parameters, AWS_PROFILE, TEST_TABLE
 
 @pytest.fixture
 def set_up():
@@ -28,7 +28,7 @@ def set_up():
 def test_parameters_singleton():
     assert parameters is not None
     assert AWS_PROFILE == parameters.get_profile_name()
-    assert SECRET_ACCESS_TABLE == parameters.get_table_name()
+    assert TEST_TABLE == parameters.get_table_name()
     assert parameters is Parameters() #singleton test
     
 def test_parameters_overrides():
