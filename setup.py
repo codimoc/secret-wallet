@@ -7,20 +7,27 @@ from setuptools.command.test import test as TestCommand
 class PyTest(TestCommand):
     user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
 
+    #This is required to initialise/declare the variables in the associated class
+    #Without this the self.pytest_args would not be there
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.pytest_args = []
+        self.pytest_args=list() #it is only used to declare the variable
 
+    #This set the initial/default value of the class variable (self.test_args)
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = []
         self.test_suite = True
 
     def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
+        #How to pass parameters to pytest, e.g. running all test with the word 'save' in it
+        #pass a space separated string of tokens: >>python3 setup.py test -a '-k save'
+        #where -a or --pytest-args is the command option
         import pytest
-        errno = pytest.main(self.pytest_args)
+        errno = pytest.main(self.pytest_args.split(' '))
         sys.exit(errno)
+        
+        
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
