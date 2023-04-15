@@ -670,7 +670,7 @@ class Parser(object):
                         required=False,
                         default=False,
                         action='store_true',
-                        help='A flag. If set, all secret are stored or displayed after being decrypted. It defaults to true (encrypted)')
+                        help='A flag. If set, all secret are stored or displayed after being decrypted. It defaults to encrypted if not passed')
 
         args = iou.my_parse(parser,sys.argv[2:])
 
@@ -718,7 +718,7 @@ class Parser(object):
                             required=False,
                             default=False,
                             action='store_true',
-                            help='A flag. If set, all secret are loaded from decrypted values. It defaults to true (encrypted)')        
+                            help='A flag. If set, all secret are loaded from decrypted values.  It defaults to encrypted if not passed')        
 
         args = iou.my_parse(parser,sys.argv[2:])
         iou.my_output('Starting a secret wallet load with parameters %s'%args)
