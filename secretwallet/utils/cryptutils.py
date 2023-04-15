@@ -66,4 +66,34 @@ def decrypt(secret, mem_pswd, salt):
     output:
     The decrypted secret 
     """
-    return _decrypt(secret.encode('latin1'), mem_pswd, salt)    
+    return _decrypt(secret.encode('latin1'), mem_pswd, salt)
+
+def encrypt_info(info,mem_pwd, salt):
+    """Encrypts a a full dictionary of extra info
+    input:
+    info         a dictionary of extra information
+    mem_pwd      memorable password (unicode)
+    salt         a string representation of the salt (optional)    
+    output:
+    The encrypted dictionary of extra information 
+    """
+    einfo = {}
+    if info is not None:
+        for key, value in info.items():
+            einfo[key] = encrypt(value, mem_pwd, salt) #in string format
+    return einfo
+
+def decrypt_info(info, mem_pwd, salt):
+    """Decrypts a a full dictionary of extra info
+    input:
+    info         an encrypted dictionary of extra information
+    mem_pwd      memorable password (unicode)
+    salt         a string representation of the salt (optional)    
+    output:
+    The decrypted dictionary of extra information 
+    """    
+    dinfo = {}
+    if info is not None:
+        for key, value in info.items():
+            dinfo[key] = decrypt(value, mem_pwd, salt) #from string format
+    return dinfo

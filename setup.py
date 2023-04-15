@@ -34,7 +34,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="secret-wallet-codimoc",
-    version="0.6.0",
+    version="0.6.1",
     author="codimoc",
     author_email="codimoc@prismoid.uk",
     description="A cloud-based wallet for personal secrets",
