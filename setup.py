@@ -11,12 +11,12 @@ class PyTest(TestCommand):
     #Without this the self.pytest_args would not be there
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.pytest_args=list() #it is only used to declare the variable
+        self.pytest_args=list()
 
     #This set the initial/default value of the class variable (self.test_args)
     def finalize_options(self):
         TestCommand.finalize_options(self)
-        self.test_args = []
+        self.test_args = [] 
         self.test_suite = True
 
     def run_tests(self):
@@ -24,7 +24,12 @@ class PyTest(TestCommand):
         #pass a space separated string of tokens: >>python3 setup.py test -a '-k save'
         #where -a or --pytest-args is the command option
         import pytest
-        errno = pytest.main(self.pytest_args.split(' '))
+        args = [] 
+        if type(self.pytest_args)==str:
+            args = self.pytest_args.split(' ') #convert to list
+        else:
+            args = self.pytest_args
+        errno = pytest.main(args)
         sys.exit(errno)
         
         
@@ -34,7 +39,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="secret-wallet-codimoc",
-    version="0.6.1",
+    version="0.6.2",
     author="codimoc",
     author_email="codimoc@prismoid.uk",
     description="A cloud-based wallet for personal secrets",

@@ -11,11 +11,11 @@ from secretwallet.constants import parameters
 from secretwallet.main.myparser import Parser
 from secretwallet.session.client import is_connected, stop_service
 from secretwallet.session.service import my_session
+from   secretwallet.utils.cryptutils import decrypt
 
 import secretwallet.utils.cryptutils as cu
 import secretwallet.utils.dbutils as du
 import secretwallet.utils.ioutils as iou
-from build.lib.secretwallet.utils.cryptutils import decrypt
 
 
 DOMAIN = 'test_domain'

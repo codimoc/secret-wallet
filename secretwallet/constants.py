@@ -1,9 +1,12 @@
+from collections import namedtuple
 import datetime
 import json
 import logging
 import os
 from os.path import expanduser, exists
-from collections import namedtuple
+import sys
+
+from .utils import make_version_number
 
 
 if 'HOME_DIR' in globals():
@@ -264,6 +267,13 @@ parameters = Parameters()
 
 # a message class containing secret info
 secret_fields = ['domain','access','user_id','password','info', 'encrypted_info','info_key','info_value','timestamp']
-default_vals = [None]*len(secret_fields)
-Secret = namedtuple('Secret', secret_fields, defaults=default_vals)
+
+#conditional compilation on python version >= 3.7
+if make_version_number(sys.version_info) >= 3700:
+    default_vals = [None]*len(secret_fields)
+    Secret = namedtuple('Secret', secret_fields, defaults=default_vals) #this for versions >= 3.7
+else:           
+    Secret = namedtuple('Secret', secret_fields) #this for versions < 3.7
+    default_vals = (None,)*len(Secret._fields)
+    Secret.__new__.__defaults__ = default_vals #this is required for version < 3.7
     
