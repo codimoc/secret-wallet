@@ -8,10 +8,11 @@ from datetime import datetime
 import sys
 
 from secretwallet.constants import parameters, Secret
+from secretwallet.storage.aws_dynamo import AWSDynamoTable
 from secretwallet.utils.cryptutils import encrypt_key, decrypt, decrypt_info
 from secretwallet.utils.logging import get_logger
-from secretwallet.storage.aws_dynamo import AWSDynamoTable
 
+from secretwallet.storage.table import Table
 import secretwallet.utils.ioutils as iou
 
 
@@ -43,7 +44,7 @@ def decrypt_secret(secret:Secret, mem_pwd:str, salt:str)->Secret:
                   timestamp = secret.timestamp
                   )
 
-def _get_table()->object:
+def _get_table()->Table:
     #we hard-code this to a AWS DynamoDB table for now
     #TODO: this will require a parameter to decide which storage type
     return AWSDynamoTable(parameters.get_table_name(), parameters.get_profile_name())

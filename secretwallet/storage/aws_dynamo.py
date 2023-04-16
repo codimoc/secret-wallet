@@ -1,8 +1,12 @@
-import boto3
 from datetime import datetime
+
+import boto3
 from boto3.dynamodb.conditions import Key
+
 from ..constants import Secret
 from ..utils.cryptutils import encrypt, encrypt_info
+from .table import Table
+
 
 MAX_REPEAT = 3
 SUCCESS = 200
@@ -18,9 +22,9 @@ def make_secret(d:dict)->Secret:
 
 """
     Proxy class for a table in a AWS DynamoDB database
-    The methos can throw so the client (dbutils functions) need to capture them
+    The methods can throw so the client (dbutils functions) need to capture them
 """
-class AWSDynamoTable:
+class AWSDynamoTable(Table):
 
     def __init__(self, table_name:str, profile_name:str):
         """
