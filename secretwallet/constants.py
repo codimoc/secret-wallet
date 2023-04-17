@@ -4,7 +4,6 @@ import json
 import logging
 import os
 from os.path import expanduser, exists
-import sys
 
 from .utils import make_version_number
 
@@ -269,7 +268,7 @@ parameters = Parameters()
 secret_fields = ['domain','access','user_id','password','info', 'encrypted_info','info_key','info_value','timestamp']
 
 #conditional compilation on python version >= 3.7
-if make_version_number(sys.version_info) >= 3700:
+if make_version_number() >= 3700:
     default_vals = [None]*len(secret_fields)
     Secret = namedtuple('Secret', secret_fields, defaults=default_vals) #this for versions >= 3.7
 else:           
