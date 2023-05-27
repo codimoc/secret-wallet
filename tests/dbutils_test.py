@@ -1,18 +1,22 @@
 import cryptography
 import pytest
-from secretwallet.constants import parameters
+from secretwallet.constants import parameters, DB_AWS_DYNAMO,DB_LOCAL_SQLITE
 
 import secretwallet.utils.cryptutils as cu
 import secretwallet.utils.dbutils as du 
+
+storages = [DB_LOCAL_SQLITE,DB_AWS_DYNAMO]
     
 @pytest.fixture
 def insert_records():
     m_pwd = 'memorable'
+    # for stype in (DB_LOCAL_SQLITE, DB_AWS_DYNAMO):
+    #     parameters.set_storage_type(stype)
     du.insert_secret("d1", "a1", "u1", "p1", {"k1":"v1","k2":"v2"}, m_pwd)
     du.insert_secret("d1", "a2", "u2", "p2", {"k3":"v3"}, m_pwd)
     du.insert_secret("d2", "a3", "u3", "p3", {"k4":"v4"}, m_pwd)
     yield
-    
+    #TODO: do on all storage
     du.delete_secrets(du.list_secrets("d1"))
     du.delete_secrets(du.list_secrets("d2"))
         
@@ -23,8 +27,9 @@ def cleanup_backups():
     
     du._cleanup_table_backups('backup')
     
-
-def test_insert_delete_login():
+@pytest.mark.parametrize("storage", storages)
+def test_insert_delete_login(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_pwd = u"ciao mamma"
@@ -37,8 +42,10 @@ def test_insert_delete_login():
     finally:
         du.delete_secret(domain, access)
         assert ns == du.count_secrets()
-        
-def test_wrong_salt_key():
+
+@pytest.mark.parametrize("storage", storages)        
+def test_wrong_salt_key(storage):
+    parameters.set_storage_type(storage)
     c_pwd = 'pirillo'
     wrong_key = cu.encrypt_key(c_pwd)
     m_pwd = u"memorabile"
@@ -53,7 +60,9 @@ def test_wrong_salt_key():
     finally:
         du.delete_secret(domain, access)
         
-def test_wrong_memorable():
+@pytest.mark.parametrize("storage", storages)        
+def test_wrong_memorable(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access"    
@@ -65,8 +74,10 @@ def test_wrong_memorable():
             du.get_secret(domain, access, 'pirillo')
     finally:
         du.delete_secret(domain, access)                
-        
-def test_insert_select_compare_login():
+
+@pytest.mark.parametrize("storage", storages)        
+def test_insert_select_compare_login(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_pwd = u"ciao mamma"
@@ -80,8 +91,10 @@ def test_insert_select_compare_login():
     finally:
         du.delete_secret(domain, access)
 
-@pytest.mark.integration        
-def test_insert_select_compare_info():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)        
+def test_insert_select_compare_info(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     secret_info = {'message':'secret'}
     domain = u"my_domain" 
@@ -93,8 +106,10 @@ def test_insert_select_compare_info():
     finally:
         du.delete_secret(domain, access)        
 
-@pytest.mark.integration        
-def test_has_secret():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)        
+def test_has_secret(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_pwd = u"ciao mamma"
@@ -106,8 +121,10 @@ def test_has_secret():
     finally:
         du.delete_secret(domain, access)
 
-@pytest.mark.integration        
-def test_has_not_secret():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)        
+def test_has_not_secret(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_pwd = u"ciao mamma"

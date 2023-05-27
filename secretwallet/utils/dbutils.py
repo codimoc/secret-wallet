@@ -7,8 +7,9 @@ Created on 24 Dec 2019
 from datetime import datetime
 import sys
 
-from secretwallet.constants import parameters, Secret
+from secretwallet.constants import parameters, Secret, DB_AWS_DYNAMO, DB_LOCAL_SQLITE
 from secretwallet.storage.aws_dynamo import AWSDynamoTable
+from secretwallet.storage.local_sqlite import LocalSqLiteTable
 from secretwallet.utils.cryptutils import encrypt_key, decrypt, decrypt_info
 from secretwallet.utils.logging import get_logger
 
@@ -45,9 +46,10 @@ def decrypt_secret(secret:Secret, mem_pwd:str, salt:str)->Secret:
                   )
 
 def _get_table()->Table:
-    #we hard-code this to a AWS DynamoDB table for now
-    #TODO: this will require a parameter to decide which storage type
-    return AWSDynamoTable(parameters.get_table_name(), parameters.get_profile_name())
+    if parameters.get_storage_type() == DB_AWS_DYNAMO: 
+        return AWSDynamoTable(parameters.get_table_name(), parameters.get_profile_name())
+    elif parameters.get_storage_type() == DB_LOCAL_SQLITE:
+        return LocalSqLiteTable(parameters.get_table_name())
 
 def _backup_table(backup_name:str)->object:
     return _get_table().backup_table(backup_name)

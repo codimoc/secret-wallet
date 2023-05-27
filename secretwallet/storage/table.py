@@ -6,7 +6,7 @@ class Table(ABC):
     @abstractmethod
     def get_table(self)->object:
         "Returns the implementation of the DB table object"
-        return None   
+        return self   
     
     @abstractmethod
     def backup_table(self, backup_name:str)->object:

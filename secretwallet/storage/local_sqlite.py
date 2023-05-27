@@ -1,7 +1,13 @@
 from datetime import datetime
 
-from ..constants import Secret
+from ..constants import Secret, CONFIG_FOLDER
 from .table import Table
+from os import path, system
+from ..utils import is_posix
+import sqlite3
+from ..utils.cryptutils import encrypt, encrypt_info
+import json
+from pickle import NONE
 
 
 """
@@ -15,47 +21,173 @@ class LocalSqLiteTable(Table):
         Construct a sqlite table identified by a table name
         """
         self.table_name = table_name
+        self.db_path = path.join(CONFIG_FOLDER,'secretwallet.sqlite')
+
                 
     def get_table(self):
+        "This is not used in sqlite, i.e. we don't use a table object"
         return Table.get_table(self)
 
 
     def backup_table(self, backup_name:str):
-        return Table.backup_table(self, backup_name)
+        backup_db_path = path.join(CONFIG_FOLDER,backup_name,'.sqlite')
+        if is_posix(): #on linux systems
+            system(f'cp {self.db_path} {backup_db_path}')
+        else: #windows
+            system(f'copy {self.db_path} {backup_db_path}')
+        return backup_db_path
 
 
     def cleanup_table_backups(self, backup_name:str):
-        return Table.cleanup_table_backups(self, backup_name)
+        backup_db_path = path.join(CONFIG_FOLDER,backup_name,'.sqlite')
+        if is_posix(): #on linux systems
+            system(f'rm {backup_db_path}')
+        else: #windows
+            system(f'del {backup_db_path}')
 
 
     def drop_table(self):
-        return Table.drop_table(self)
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            cursor.execute("DROP TABLE IF EXISTS ?;", (self.table_name,))
+        finally:
+            cursor.close()
+            connection.close
 
 
     def has_table(self, table_name:str=None):
-        return Table.has_table(self, table_name)
+        "Checks if the table exists"
+        result = False
+        if table_name is None:
+            table_name = self.table_name        
+        query = """SELECT EXISTS ( SELECT 1 FROM sqlite_schema 
+                                   WHERE type='table' 
+                                   AND name= ?);"""        
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            cursor.execute(query,(self.table_name,))
+            result = cursor.fetchone()[0] == 1
+        finally:
+            cursor.close()
+            connection.close
+        return result
 
 
     def create_table(self, table_name:str=None):
-        return Table.create_table(self, table_name)
+        "Creates a table if it does not exist"
+        if table_name is None:
+                table_name = self.table_name
+        if self.has_table(table_name):
+            return
+        #todo: info field should be json        
+        query = f"""CREATE TABLE IF NOT EXISTS [{self.table_name}] (
+                      domain TEXT NOT NULL,
+                      access TEXT NOT NULL,
+                      uid TEXT,
+                      pwd TEXT,
+                      info TEXT, 
+                      timestamp TEXT,
+                      PRIMARY KEY (domain, access) );
+                """
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            cursor.execute(query)
+            connection.commit()
+        finally:
+            cursor.close()
+            connection.close
 
 
     def insert_record(self, 
-        secret:Secret, 
-        mem_pwd:str, 
-        salt:str, 
-        timestamp:str=datetime.now().isoformat()):
-        return Table.insert_record(self, secret, mem_pwd, salt, timestamp)
+                     secret:Secret, 
+                     mem_pwd:str, 
+                     salt:str, 
+                     timestamp:str=datetime.now().isoformat()):
+        "insert a record in the secrets table"
+        euid = encrypt(secret.user_id, mem_pwd, salt)
+        epwd = encrypt(secret.password, mem_pwd, salt)
+        einfo = json.dumps(encrypt_info(secret.info, mem_pwd, salt))
+        
+        record = (secret.domain,
+                  secret.access,
+                  euid,
+                  epwd,
+                  einfo,
+                  timestamp)
+        query = f"""INSERT INTO [{self.table_name}] 
+                    VALUES (?1,?2,?3,?4,?5,?6) 
+                    ON CONFLICT (domain, access)
+                    DO UPDATE
+                    SET uid = ?3,
+                        pwd = ?4,
+                        info = ?5,
+                        timestamp = ?6;                    
+                """
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            cursor.execute(query,record)
+            connection.commit()
+        finally:
+            cursor.close()
+            connection.close        
 
 
     def insert_encrypted_record(self, 
-        secret:Secret, 
-        timestamp:str=datetime.now().isoformat()):
-        return Table.insert_encrypted_record(self, secret, timestamp)
+                                secret:Secret, 
+                                timestamp:str=datetime.now().isoformat()):
+        "insert a pre-encrypted record in the secrets table"        
+        record = (secret.domain,
+                  secret.access,
+                  secret.user_id,
+                  secret.password,
+                  json.dumps(secret.info),
+                  timestamp)
+        query = f"""INSERT INTO [{self.table_name}] 
+                    VALUES (?1,?2,?3,?4,?5,?6) 
+                    ON CONFLICT (domain, access)
+                    DO UPDATE
+                    SET uid = ?3,
+                        pwd = ?4,
+                        info = ?5,
+                        timestamp = ?6;                    
+                """
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            cursor.execute(query,record)
+            connection.commit()
+        finally:
+            cursor.close()
+            connection.close
 
 
     def get_record(self, secret:Secret):
-        return Table.get_record(self, secret)
+        "retrieves an encrypted record keyed by domain and access, as a dictionary"
+        query = f"""SELECT * FROM [{self.table_name}]
+                    WHERE domain = ?1
+                    AND   access = ?2;
+                """
+        in_record = (secret.domain, secret.access)
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            cursor.execute(query,in_record)
+            out_record = cursor.fetchone()
+            if out_record is None:
+                return None
+            return Secret(domain=out_record[0],
+                          access = out_record[1],
+                          user_id = out_record[2],
+                          password = out_record[3],
+                          info = json.loads(out_record[4]),
+                          timestamp = out_record[5])
+        finally:
+            cursor.close()
+            connection.close
 
 
     def update_record_single_info(self, 
@@ -72,10 +204,44 @@ class LocalSqLiteTable(Table):
         return Table.update_record_info_dictionary(self, secret, timestamp)
 
 
-    def delete_record(self, secret:Secret):
-        return Table.delete_record(self, secret)
+    def delete_record(self, secret:Secret)->None:
+        "delete a single record based on domain and access keys"
+        query = f"""DELETE from [{self.table_name}]
+                    WHERE domain = ?1
+                    AND access = ?2;"""
+        in_record = (secret.domain, secret.access)
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            cursor.execute(query,in_record)
+            connection.commit()
+        finally:
+            cursor.close()
+            connection.close
 
-
-    def query_record(self, secret:Secret):
-        return Table.query_record(self, secret)
+    def query_record(self, secret:Secret)-> list:
+        "return a list of secrets matching the domain key passed"
+        where_clause = ""
+        binding = False
+        if secret.domain is not None:
+            where_clause = "WHERE domain = ?"
+            binding = True #there is a parameter to bind        
+        query = f"""SELECT domain, access from [{self.table_name}] {where_clause};"""
+        
+        ret = list()
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            if binding:
+                cursor.execute(query,(self.domain,))
+            else:
+                cursor.execute(query)
+            records = cursor.fetchmany()
+            for r in records:
+                ret.append(Secret(domain=r[0], access=r[1]))
+        finally:
+            cursor.close()
+            connection.close        
+        
+        return ret
 

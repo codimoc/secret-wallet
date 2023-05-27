@@ -1,7 +1,8 @@
 from multiprocessing.connection import Client
 
-from secretwallet.constants import parameters, is_posix
+from secretwallet.constants import parameters
 from secretwallet.utils.logging import get_logger
+from secretwallet.utils import is_posix
 
 
 logger = get_logger(__name__, parameters.get_log_level())

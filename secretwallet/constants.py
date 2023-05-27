@@ -2,7 +2,6 @@ from collections import namedtuple
 import datetime
 import json
 import logging
-import os
 from os.path import expanduser, exists
 
 from .utils import make_version_number
@@ -50,9 +49,6 @@ LOG_BACKUP_COUNT  = 1        #number of rotated backup files that are retained
 #type of storage
 DB_AWS_DYNAMO = 0
 DB_LOCAL_SQLITE = 1
-
-def is_posix()->bool:
-    return os.name=='posix'
 
 
 def make_log_level(level):
@@ -157,6 +153,9 @@ class Parameters(object):
             return self.__data['storage_type']
         else:
             return DB_AWS_DYNAMO
+        
+    def set_storage_type(self, storage):
+        self.__data['storage_type'] = storage        
 
     def set_table_name(self, table):
         self.__data['table_name'] = table

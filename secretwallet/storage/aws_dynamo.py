@@ -146,7 +146,7 @@ class AWSDynamoTable(Table):
         
     def get_record(self,
                    secret: Secret) -> Secret:
-        "retrieves an encripted record keyed by domain and access, as a dictionary"
+        "retrieves an encrypted record keyed by domain and access, as a dictionary"
         rep = 0
         status = 0
         #if the insert did not work, repeat up to MAX_REPEAT times
