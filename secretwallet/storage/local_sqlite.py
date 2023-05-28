@@ -61,14 +61,15 @@ class LocalSqLiteTable(Table):
         result = False
         if table_name is None:
             table_name = self.table_name        
-        query = """SELECT EXISTS ( SELECT 1 FROM sqlite_schema 
-                                   WHERE type='table' 
-                                   AND name= ?);"""        
+        query = """SELECT count(1)
+                   FROM sqlite_schema 
+                   WHERE type='table' 
+                   AND name= ?;"""        
         try:
             connection = sqlite3.connect(self.db_path)
             cursor = connection.cursor()
-            cursor.execute(query,(self.table_name,))
-            result = cursor.fetchone()[0] == 1
+            cursor.execute(query,(table_name,))
+            result = (cursor.fetchone()[0] == 1)
         finally:
             cursor.close()
             connection.close
@@ -191,17 +192,72 @@ class LocalSqLiteTable(Table):
 
 
     def update_record_single_info(self, 
-        secret:Secret, 
-        mem_pwd:str, 
-        salt:str, 
-        timestamp:str=datetime.now().isoformat()):
-        return Table.update_record_single_info(self, secret, mem_pwd, salt, timestamp)
+                                  secret:Secret, 
+                                  mem_pwd:str, 
+                                  salt:str, 
+                                  timestamp:str=datetime.now().isoformat()) -> None:
+        "update a record in the secrets table, with a maximum of one extra info stored in the Secret record"
+        
+        query = f"UPDATE [{self.table_name}]"
+        params = { "domain" : secret.domain, "access" : secret.access, "timestamp" : timestamp}    
+        condition = " WHERE domain=:domain AND access=:access;"
+        change = False
+        update = "SET timestamp = :timestamp"
+        if secret.user_id is not None:
+            change = True
+            params["uid"] = encrypt(secret.user_id, mem_pwd, salt)
+            update += ", uid = :uid"
+        if secret.password is not None:
+            change = True
+            params["pwd"] = encrypt(secret.password, mem_pwd, salt)
+            update += ", pwd = :pwd"
+        if secret.info_key is not None and secret.info_value is not None:
+            change = True
+            old_secret = self.get_record(secret)
+            if old_secret is not None:
+                old_secret.info[secret.info_key] = encrypt(secret.info_value, mem_pwd, salt)
+                params["info"] = json.dumps(old_secret.info)
+                update += ", info = :info"
+                
+        if not change: #nothing to do
+            return
+        query += update + condition
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            cursor.execute(query,params)
+            connection.commit()
+        finally:
+            cursor.close()
+            connection.close        
 
 
     def update_record_info_dictionary(self, 
-        secret:Secret, 
-        timestamp:str=datetime.now().isoformat()):
-        return Table.update_record_info_dictionary(self, secret, timestamp)
+                                      secret:Secret, 
+                                      timestamp:str=datetime.now().isoformat()) -> None:
+        "update the info dictionary for a record in the secrets table (pre-encrypted)"
+        einfo = secret.encrypted_info
+        if einfo is None:
+            return
+        
+        query = f"""UPDATE [{self.table_name}]
+                    SET info =:info, timestamp=:timestamp
+                    WHERE domain=:domain AND access=:access;
+                """
+        
+        params = { "domain" : secret.domain, 
+                   "access" : secret.access,
+                   "info"   : json.dumps(einfo), 
+                   "timestamp" : timestamp}
+        
+        try:
+            connection = sqlite3.connect(self.db_path)
+            cursor = connection.cursor()
+            cursor.execute(query,params)
+            connection.commit()
+        finally:
+            cursor.close()
+            connection.close        
 
 
     def delete_record(self, secret:Secret)->None:
@@ -233,10 +289,10 @@ class LocalSqLiteTable(Table):
             connection = sqlite3.connect(self.db_path)
             cursor = connection.cursor()
             if binding:
-                cursor.execute(query,(self.domain,))
+                cursor.execute(query,(secret.domain,))
             else:
                 cursor.execute(query)
-            records = cursor.fetchmany()
+            records = cursor.fetchall()
             for r in records:
                 ret.append(Secret(domain=r[0], access=r[1]))
         finally:

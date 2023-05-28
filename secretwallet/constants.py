@@ -47,8 +47,8 @@ LOG_MAX_FILE_SIZE =  1000000 #1MB
 LOG_BACKUP_COUNT  = 1        #number of rotated backup files that are retained
 
 #type of storage
-DB_AWS_DYNAMO = 0
-DB_LOCAL_SQLITE = 1
+DB_AWS_DYNAMO = 'aws_dynamo'
+DB_LOCAL_SQLITE = 'local_sqlite'
 
 
 def make_log_level(level):

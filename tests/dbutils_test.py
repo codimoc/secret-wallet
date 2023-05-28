@@ -8,15 +8,15 @@ import secretwallet.utils.dbutils as du
 storages = [DB_LOCAL_SQLITE,DB_AWS_DYNAMO]
     
 @pytest.fixture
-def insert_records():
+def insert_records(storage):
+    parameters.set_storage_type(storage)
     m_pwd = 'memorable'
-    # for stype in (DB_LOCAL_SQLITE, DB_AWS_DYNAMO):
-    #     parameters.set_storage_type(stype)
     du.insert_secret("d1", "a1", "u1", "p1", {"k1":"v1","k2":"v2"}, m_pwd)
     du.insert_secret("d1", "a2", "u2", "p2", {"k3":"v3"}, m_pwd)
     du.insert_secret("d2", "a3", "u3", "p3", {"k4":"v4"}, m_pwd)
+    
     yield
-    #TODO: do on all storage
+    
     du.delete_secrets(du.list_secrets("d1"))
     du.delete_secrets(du.list_secrets("d2"))
         
@@ -136,8 +136,10 @@ def test_has_not_secret(storage):
     finally:
         du.delete_secret(domain, access)
 
-@pytest.mark.integration        
-def test_update_secret_login():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)        
+def test_update_secret_login(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     secret_uid = u"me@home"
     secret_uid2 = u"me@office"
@@ -161,8 +163,10 @@ def test_update_secret_login():
     finally:
         du.delete_secret(domain, access)
 
-@pytest.mark.integration        
-def test_update_secret_info_change_value():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)        
+def test_update_secret_info_change_value(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access" 
@@ -183,8 +187,10 @@ def test_update_secret_info_change_value():
     finally:
         du.delete_secret(domain, access)
         
-@pytest.mark.integration        
-def test_update_secret_info_insert_value():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)
+def test_update_secret_info_insert_value(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access" 
@@ -207,8 +213,10 @@ def test_update_secret_info_insert_value():
     finally:
         du.delete_secret(domain, access)
         
-@pytest.mark.integration        
-def test_update_secret_info_change_password_and_a_value():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)        
+def test_update_secret_info_change_password_and_a_value(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access" 
@@ -234,8 +242,10 @@ def test_update_secret_info_change_password_and_a_value():
     finally:
         du.delete_secret(domain, access)
         
-@pytest.mark.integration        
-def test_update_missing_secret_no_effect():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)        
+def test_update_missing_secret_no_effect(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access"
@@ -262,8 +272,10 @@ def test_update_missing_secret_no_effect():
     finally:
         du.delete_secret(domain, access)
         
-@pytest.mark.integration        
-def test_update_info_dict_remove_key():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)        
+def test_update_info_dict_remove_key(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     domain = u"my_domain" 
     access = u"my_access" 
@@ -292,13 +304,16 @@ def test_update_info_dict_remove_key():
         du.delete_secret(domain, access)        
         
         
-@pytest.mark.integration        
-def test_has_table():
+@pytest.mark.integration
+@pytest.mark.parametrize("storage", storages)        
+def test_has_table(storage):
+    parameters.set_storage_type(storage)
     assert True  == du.has_table(parameters.get_table_name())
     assert False == du.has_table('new_table')
     
-    
-def test_delete_secrets():
+@pytest.mark.parametrize("storage", storages)    
+def test_delete_secrets(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     domain = u"my_domain"  
     info = {'message':'secret'}
@@ -316,8 +331,9 @@ def test_delete_secrets():
     #check that they are gone
     assert cnt== du.count_secrets()
     
-    
-def test_rename_secret():
+@pytest.mark.parametrize("storage", storages)    
+def test_rename_secret(storage):
+    parameters.set_storage_type(storage)
     m_pwd = u"memorabile"
     domain = u"my_domain"
     access = u"my_access"
@@ -341,8 +357,10 @@ def test_rename_secret():
     finally:
         du.delete_secret(domain, access)
         du.delete_secret(new_domain, new_access)
-        
-def test_reconf_memorable(insert_records):
+
+@pytest.mark.parametrize("storage", storages)        
+def test_reconf_memorable(storage, insert_records):
+    parameters.set_storage_type(storage)
     old_mem = "memorable"
     new_mem = 'another'
     secrets = du.list_secrets("d1") + du.list_secrets("d2")
@@ -360,16 +378,20 @@ def test_reconf_memorable(insert_records):
     
     with pytest.raises(cryptography.fernet.InvalidToken):
         du.get_secret('d1', 'a1', old_mem)
-            
-def test_reconf_memorable_with_backup(insert_records, cleanup_backups):
+
+@pytest.mark.parametrize("storage", storages)
+def test_reconf_memorable_with_backup(storage, insert_records, cleanup_backups):
+    parameters.set_storage_type(storage)
     old_mem = "memorable"
     new_mem = 'another'
     secrets = du.list_secrets("d1") + du.list_secrets("d2")
     assert 3 == len(secrets)
     arn = du.reconf_memorable(secrets, old_mem, new_mem, True)
     assert arn is not None
-        
-def test_reconf_salt_key(insert_records):
+
+@pytest.mark.parametrize("storage", storages)
+def test_reconf_salt_key(storage, insert_records):
+    parameters.set_storage_type(storage)
     old_mem = "memorable"
     c_pwd = 'carpiato'
     new_salt_key = cu.encrypt_key(c_pwd)
@@ -388,8 +410,10 @@ def test_reconf_salt_key(insert_records):
     
     with pytest.raises(cryptography.fernet.InvalidToken):
         du.get_secret('d1', 'a1', old_mem)
-            
-def test_query_records(insert_records):
+
+@pytest.mark.parametrize("storage", storages)            
+def test_query_records(storage, insert_records):
+    parameters.set_storage_type(storage)
     #test with no filter
     ns = du.count_secrets()
     secrets = du.query_secrets_by_field(None, None)
@@ -414,8 +438,10 @@ def test_query_records(insert_records):
     #test on both
     secrets = du.query_secrets_by_field("1", "2")
     assert 1 == len(secrets)
-    
-def test_get_all_secrets(insert_records):
+
+@pytest.mark.parametrize("storage", storages)    
+def test_get_all_secrets(storage, insert_records):
+    parameters.set_storage_type(storage)
     secrets = du.get_all_secrets('memorable',False) # return as Secret
     assert 3 == len(secrets)
     assert 'd1' == secrets[0].domain
