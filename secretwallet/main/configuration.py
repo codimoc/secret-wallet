@@ -139,6 +139,7 @@ def load_configurations(conf_file = CONFIG_FILE, credentials_file = CREDENTIALS_
 def display_configuration(conf_file, content, conf):
     print(f"\nThe {content} at {conf_file}")
     for k,v in conf.items():
+        if k=='key': continue
         print(f'{k:30} = {v:<40}')
         
         
@@ -202,6 +203,27 @@ def make_configurations():
                 print(e)
                 print("Could not write the configuration file. Make sure you have AWS connection and try again")
         else:
-            exit(1)    
-    
+            exit(1)
+            
+    answ = input("\nDo you want to select or change the storage type: local or remote? (yes|skip) ")
+    if answ.lower().startswith('y'):
+        while (True):
+            storage = input('{0:30}[{1:>30}] = '.format('storage type (aws_dynamo|local_sqlite)',parameters.get_storage_type()))
+            if len(storage) == 0:
+                storage = parameters.get_storage_type()
+            if storage.lower() in ('aws_dynamo','local_sqlite'):
+                break  
+        conf = get_configuration(CONFIG_FILE)
+        conf["storage_type"] = storage
+        display_configuration(CONFIG_FILE, 'secret wallet configuration is located', conf)     
+        answ = input("\nDo you want to set the configuration parameters? (yes|exit) ")
+        if answ.lower().startswith('y'):
+            try:
+                set_configuration_data(conf, CONFIG_FILE)
+            except Exception as e:
+                print(e)
+                print("Could not write the configuration file. Make sure you have AWS connection and try again")
+        else:
+            exit(1)
+        
     

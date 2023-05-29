@@ -70,13 +70,13 @@ def has_table(table_name:str)->bool:
         sys.exit(1)
 
 
-def create_table(table_name=parameters.get_table_name()):
+def create_table(table_name=parameters.get_table_name(), silent=False):
     "Creates a table if it does not exist"
     try:
         _get_table().create_table(table_name)
     except Exception as e:
         logger.error(e)
-    if has_table(table_name):
+    if has_table(table_name) and not silent:
         logger.info(f"Table {table_name} has been created")
         iou.my_output(f"Table {table_name} has been created")
 

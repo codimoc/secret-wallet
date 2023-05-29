@@ -19,7 +19,7 @@ from secretwallet.utils.cryptutils import encrypt_key
 from secretwallet.utils.dbutils import has_secret, get_secret, insert_secret, insert_encrypted_secret, list_secrets, \
                                        update_secret, update_secret_info_dictionary, delete_secret, delete_secrets, rename_secret, \
                                        reconf_memorable, reconf_salt_key, query_secrets_by_field, query_secrets_by_pattern, \
-                                       get_all_secrets
+                                       get_all_secrets, has_table, create_table
 from secretwallet.utils.logging import get_logger
 
 import pkg_resources as pkg
@@ -98,6 +98,9 @@ class Parser(object):
             iou.my_output('Unrecognized command')
             parser.print_help()
             exit(1)
+        
+        #create table if not there for the first time
+        create_table(silent=True) #if table already there nothing happens
         # use dispatch pattern to invoke method with same name
         getattr(self, args.command)()
 
@@ -385,7 +388,8 @@ class Parser(object):
            The timeout is the amount of time in seconds along which the memorable password is remembered without been re-asked.
            The lifetime determines the lifetime of the background process that manages the temporary storage of
            the memorable password. The value of the lifetime parameter should be bigger than the password timeout.
-           The logging level is one of debug, info, warning, critical, error or fatal.
+           The logging level is one of debug, info, warning, critical, error or fatal. The srorage_type determines the
+           type of storage used: aws_dynamo for remote storage on AWS or local_sqlite for SQLite based local storage.
         """
         parser = argparse.ArgumentParser(
             description=self.conf.__doc__,
@@ -412,6 +416,10 @@ class Parser(object):
                             '--loglevel',
                             dest = 'loglevel',
                             help='Logging level. One of debug, info, warning, critical, error or fatal')
+        parser.add_argument('-st',
+                            '--storage',
+                            dest = 'storage',
+                            help='Storage type: aws_dynamo for remote storage on AWS, local_sqlite for local storage')        
 
         args = iou.my_parse(parser,sys.argv[2:])
         if args is None:
@@ -432,6 +440,11 @@ class Parser(object):
                         conf['log_level'] = args.loglevel.lower()
                     else:
                         iou.my_output(f"The passed log level {args.loglevel.lower()} is not valid")
+                if args.storage is not None:
+                    if args.storage.lower() in ['aws_dynamo', 'local_sqlite']:
+                        conf['storage_type'] = args.storage.lower()
+                    else:
+                        iou.my_output(f"The passed storage_type {args.storage.lower()} is not valid")                        
                 set_configuration_data(conf)
         except Exception as e:
             iou.my_output(repr(e))
