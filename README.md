@@ -3,7 +3,7 @@
 + **Privacy disclaimer**: This application is entirely open-source and non-commercial. It is free to download and use for securing personal information. The user of this application is uniquely responsible for setting up his/her own storage account on Amazon AWS. This application is simply a tool to facilitate the communication between the user's machine and the remote store. Under no circumstances does this application have access to, collect, manage or transfer information owned by the the final user of the application.
 
 
-+ **Liability disclaimer**: This application does its best to provide means of securing data on a remote store, as explained in the documentation below. By reading this document and/or by browsing through the open source [code](https://github.com/codimoc/secret-wallet), the user will decide if this application satisfies his/her needs. By downloading and using this application the end user accepts full responsibility of any damage incurred as a consequence of the use of this application. To the maximum extent permitted by applicable law, the owner and developers of this application shall not be liable for any indirect, incidental, special, consequential or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, goodwill, or other intangible losses, resulting from the use of this application.
++ **Liability disclaimer**: This application does its best to provide means of securing data on a remote store, as explained in the documentation below. By reading this document and/or by browsing through the open source [code](https://github.com/codimoc/secret-wallet), the user will decide if this application satisfies his/her needs. By downloading and using this application the end user accepts full responsibility of any damage incurred as a consequence of the use of this application. To the maximum extent permitted by applicable law, the owner and developers of this application shall not be liable for any indirect, incidental, special, consequential or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, good-will, or other intangible losses, resulting from the use of this application.
 
 ## Warning
 This application was written and designed for Linux and provides somewhat reduced functionalities on Windows systems. The original design was aimed at a command line tool that integrates inside a Linux shell like bash, with some functionalities running in the background. From version 0.4 onwards, a bespoke secret_wallet **shell** has been added, addressing most of the
@@ -30,6 +30,7 @@ Data can be encrypted on a hard drive, but the disk can fail, the phone can be s
 ## Index
 *  [motivations](#motivations)
 *  [description](#description)
+*  [local storage](#local_storage)
 *  [concepts](#concepts)
 *  [requirements](#requirements)
 *  [installation](#installation)
@@ -87,6 +88,12 @@ the secrets.
 On the other hand, if a device is lost or stolen, the memorable password is still required to access the secrets. The AWS security layer does not help in this case,
 with the AWS secure credentials helpfully located on the compromised device's file system.
 
+## <a id="local_storage"></a> Using local storage
+Starting from version 0.6.3, this application expands the storage solutions available beyond Amazon AWS. This is intended
+to allow more flexibility for users to chose their favourite storage providers. As of version 0.6.3, a local storage database, based on Sqlite3, is added. Users can chose this solution as their primary storage instead of-, or in parallel to-, AWS DynamoDB (see instruction on [first configuration](#installation) and [later reconfiguration](#customization)).
+
+A local storage solution is mostly suited for users that intend to run the secret wallet on a single device, because running this application in local-storage mode on multiple devices clearly results in synchronisation issues between the secrets stored on different machines. For this reason, future releases will bring a synchronisation functionality between a master remote storage and the local storage. On the other hand, a local storage solution has some appeal in terms of response speed and functionality when the internet is temporarily down or not available. Hence a good solution for all users is possibly a hybrid solution, with a remote master storage and a local storage. As said this will be targeted by future releases, however it can be achieved already from version 0.6.3 by switching storage type as described [here](#customization) and using the **save** and **load** function for synchronisation. 
+
 ## <a id="concepts"></a>Concepts
 The basic unit of information stored on the remote DB is a **secret**.
 Each secret is identified by a pair of two keys, the domain key and the access key:
@@ -110,7 +117,7 @@ The **secret wallet** uses the AWS cloud to store the secret information; in par
 *   It is easy to use and create new tables,
 *   It is available in the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) package that Amazon offers as an entry point into their echo-system.
 
-In order to use the **secret wallet** it is necessary to use an Amazon AWS account,  or create a new one. This can be done quickly and easily from the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) page. Once the account has been created, three pieces of information are required for the **secret wallet**:
+In order to use the **secret wallet** it is necessary to use an Amazon AWS account,  or create a new one. This can be done quickly and easily from the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc) page. Once the account has been created, three pieces of information are required by the **secret wallet**:
 *   the **aws_access_key_id**: to identify the account
 *   the **aws_secret_access_key**: which can be created after logging into the account; this key can be regenerated several times.
 *   the **region**: the physical location of the server, possibly close to the location of usage.
@@ -134,11 +141,12 @@ After installing all the dependencies from other python packages,  it produce th
 Configuring the **secret wallet** is required in order to save both the AWS credentials for the Amazon cloud and the device's configuration key, which is the first layer of security to protect your secrets. This configuration also creates the DynamoDB table used to store the secrets.
 
 This *first time configuration* is performed by running the **secret_wallet_conf** script from the command line. This script is interactive, in the old way of *questions and answers*, and provides some default values when possible.
-It is divided into two separate steps, each of which can be skipped. Skipping a step allows to avoid overwriting credentials, if the system was partially configured, and a partial change of configuration is desired.
+It is divided into three separate steps, each of which can be skipped. Skipping a step allows to avoid overwriting credentials, if the system was partially configured, and a partial change of configuration is desired.
 
 These steps are:
 *   Storing the **AWS credentials**: this results in creating or modifying the *credentials* file in the *.aws*  directory, located in the user home directory. This file is typically divided into separate sections. This allows to persist  different connections to different services on the Amazon cloud. The section relevant to the **secret-wallet** is market with the heading [secret-wallet].
-*   Storing the **secret wallet configuration**: this step persists the information in the *secretwallet.json* file in the *.secretwallet* directory, located in the user home directory. This configuration file is used to store the device encryption key, the name of the AWS connection profile and the table name where the secrets are stored. This file is also used to store customization parameters as described in [this section](#customization).
+*   Storing the **secret wallet configuration**: this step persists the information in the **secretwallet.json** file in the *.secretwallet* directory, located in the user home directory. This configuration file is used to store the device encryption key, the name of the AWS connection profile and the table name where the secrets are stored. This file is also used to store customization parameters as described in [this section](#customization).
+* Choosing the **storage type** between **aws_dynamo** and **local_sqlite**. This information is stored in the **secretwallet.json** file together with the other customization settings.
 
 When questions are asked during the configuration, please type the first letter of the answer (e.g. *s* for *skip*) to select that choice. Whenever a default value is suggested, simply hit the *Return* button to confirm that choice.
 
@@ -196,7 +204,13 @@ This section describes the main commands of this application:
 *	**query**: Searches for secrets containig a given subtext in either their domain or access names, or both. By using the explicit -d and -a options, it is possible to limit the search to domain names or access names only. Alternatively it is possible to pass a subtext without any specification in front (i.e. without -d or -a) and the search of that pattern will include both domain and access names.
 *	**qget**: Searches for secrets containig a given subtext in their domain or access names. Once a list of secrets
 that match the given pattern is found, the secrets are tagged with a progressive number and the user can select the one to retrieve and display.
-*	**conf**: Configures some parameters for this application. It is possible to list all parameters with the -l option, or to configure the timeout and lifetime (in seconds). The timeout is the amount of time in seconds along which the memorable password is remembered without been re-asked. The lifetime determines the lifetime of the background   process that manages the temporary storage of the memorable password. The value of the lifetime parameter should be bigger than the value of the password timeout.
+*	**conf**: Configures some parameters for this application. It is possible to list all parameters with the -l option,
+ or to configure the timeout and lifetime (in seconds) or the log level.
+ The timeout is the amount of time in seconds along which the memorable password is remembered without been re-asked.
+ The lifetime determines the lifetime of the background process that manages the temporary storage of
+ the memorable password. The value of the lifetime parameter should be bigger than the password timeout.
+ The logging level is one of debug, info, warning, critical, error or fatal. The srorage_type determines the
+ type of storage used: aws_dynamo for remote storage on AWS or local_sqlite for SQLite based local storage.
 *	**reconf**: Reconfigures either the memorable or the device password. All secrets will be re-encryted with the changed password. It is not possible to change both passwords at the same time. Depending on the size of the wallet, this operation might take some time. A backup of the old table is also performed.
 *	**help**: Display the main help.
 *	**version**: Returns the release version number.
@@ -289,6 +303,10 @@ where the values are in seconds, *i.e.* timeout of 30 seconds and a lifetime of 
 
 It is also possible to change the verbosity of information logged int the  _secretwallet.log_  file located in the  _.secretwallet_  home directory, by passing a logging level with the  _-ll_  option.
 
+Finally this configuration function can be used to change the storage type, for example selecting a local storage by typing:
+
+        secret_wallet conf -st local_sqlite    
+
 ## <a id="reconfiguration"></a>Reconfiguration
 The reconfiguration process allows the re-encryption of all existing secrets when the device password or the memorable password are changed. In this scenario all secrets need to be retrieved, decrypted and re-encrypted with the new key(s). This can be done with the **reconf** command, with optional parameters set to *-d* for a change of device password, and to *-m* for a change of memorable password.
 
@@ -328,10 +346,10 @@ Inside the shell are now:
 
 
 ## <a id="work"></a>Work in progress
-Coming soon, in the next releases, there will be some feature improvements and fixes, like:
+Work scheduled for up & coming releases:
 
-*   adding new commands to the command line interface, like query capabilities,
-*   adding batch processing of secrets' insertion
+*   extending storage solutions
+*   synchroniaation between local and remote storages 
 *   required bug fixes.
 
 On a longer time scale:
