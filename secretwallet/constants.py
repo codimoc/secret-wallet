@@ -2,9 +2,7 @@ from collections import namedtuple
 import datetime
 import json
 import logging
-import os
 from os.path import expanduser, exists
-import sys
 
 from .utils import make_version_number
 
@@ -49,11 +47,8 @@ LOG_MAX_FILE_SIZE =  1000000 #1MB
 LOG_BACKUP_COUNT  = 1        #number of rotated backup files that are retained
 
 #type of storage
-DB_AWS_DYNAMO = 0
-DB_LOCAL_SQLITE = 1
-
-def is_posix()->bool:
-    return os.name=='posix'
+DB_AWS_DYNAMO = 'aws_dynamo'
+DB_LOCAL_SQLITE = 'local_sqlite'
 
 
 def make_log_level(level):
@@ -158,6 +153,9 @@ class Parameters(object):
             return self.__data['storage_type']
         else:
             return DB_AWS_DYNAMO
+        
+    def set_storage_type(self, storage):
+        self.__data['storage_type'] = storage        
 
     def set_table_name(self, table):
         self.__data['table_name'] = table
@@ -269,7 +267,7 @@ parameters = Parameters()
 secret_fields = ['domain','access','user_id','password','info', 'encrypted_info','info_key','info_value','timestamp']
 
 #conditional compilation on python version >= 3.7
-if make_version_number(sys.version_info) >= 3700:
+if make_version_number() >= 3700:
     default_vals = [None]*len(secret_fields)
     Secret = namedtuple('Secret', secret_fields, defaults=default_vals) #this for versions >= 3.7
 else:           

@@ -2,6 +2,7 @@
 # the executable can be started by
 # python -m secretwallet <add here the arguments that you need>
 
-from .main import main
+from .main import main, configure
 
 main()
+#configure()

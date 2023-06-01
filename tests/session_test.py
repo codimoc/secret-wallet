@@ -5,9 +5,18 @@ import pytest
 from secretwallet.session.client import get_session_password, set_session_password, stop_service, is_connected, ping_session_server
 from secretwallet.session.service import my_session
 
+import psutil
+
+def kill_all_procs():
+    pname = 'secret_wallet'
+    for proc in psutil.process_iter():
+        if proc.name() == pname:
+            proc.kill()
+
 
 @pytest.fixture
 def set_up():
+    kill_all_procs()
     lifetime = 12
     timeout = 6
     value = 'message'

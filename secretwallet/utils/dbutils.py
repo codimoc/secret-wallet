@@ -7,11 +7,13 @@ Created on 24 Dec 2019
 from datetime import datetime
 import sys
 
-from secretwallet.constants import parameters, Secret
+from secretwallet.constants import parameters, Secret, DB_AWS_DYNAMO, DB_LOCAL_SQLITE
+from secretwallet.storage.aws_dynamo import AWSDynamoTable
+from secretwallet.storage.local_sqlite import LocalSqLiteTable
 from secretwallet.utils.cryptutils import encrypt_key, decrypt, decrypt_info
 from secretwallet.utils.logging import get_logger
-from secretwallet.storage.aws_dynamo import AWSDynamoTable
 
+from secretwallet.storage.table import Table
 import secretwallet.utils.ioutils as iou
 
 
@@ -43,10 +45,11 @@ def decrypt_secret(secret:Secret, mem_pwd:str, salt:str)->Secret:
                   timestamp = secret.timestamp
                   )
 
-def _get_table()->object:
-    #we hard-code this to a AWS DynamoDB table for now
-    #TODO: this will require a parameter to decide which storage type
-    return AWSDynamoTable(parameters.get_table_name(), parameters.get_profile_name())
+def _get_table()->Table:
+    if parameters.get_storage_type() == DB_AWS_DYNAMO: 
+        return AWSDynamoTable(parameters.get_table_name(), parameters.get_profile_name())
+    elif parameters.get_storage_type() == DB_LOCAL_SQLITE:
+        return LocalSqLiteTable(parameters.get_table_name())
 
 def _backup_table(backup_name:str)->object:
     return _get_table().backup_table(backup_name)
@@ -67,13 +70,13 @@ def has_table(table_name:str)->bool:
         sys.exit(1)
 
 
-def create_table(table_name=parameters.get_table_name()):
+def create_table(table_name=parameters.get_table_name(), silent=False):
     "Creates a table if it does not exist"
     try:
         _get_table().create_table(table_name)
     except Exception as e:
         logger.error(e)
-    if has_table(table_name):
+    if has_table(table_name) and not silent:
         logger.info(f"Table {table_name} has been created")
         iou.my_output(f"Table {table_name} has been created")
 
